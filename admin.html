@@ -121,6 +121,12 @@
     </table>
     <div id="empty-state" class="empty" style="display:none">No brands pending review 🎉</div>
   </div>
+
+  <div style="margin-top:60px">
+    <p class="section-title">TAXONOMY HEALTH — LAST 30 DAYS</p>
+    <div class="stats" id="skip-stats" style="margin-bottom:32px"></div>
+    <div id="skip-tables"></div>
+  </div>
 </div>
 
 <script>
@@ -132,6 +138,7 @@ function doLogin() {
   if (!val) return
   adminToken = val
   loadDashboard()
+    loadSkippedSummary()
 }
 
 document.getElementById('token-input').addEventListener('keydown', e => {
@@ -210,6 +217,67 @@ async function approve(brandId, brandName) {
     btn.textContent = 'Retry'
   }
 }
+
+async function loadSkippedSummary() {
+  try {
+    const res = await fetch(`${API}/brands/admin/skipped-summary?token=${adminToken}`)
+    if (!res.ok) return
+    const data = await res.json()
+
+    const LABELS = {
+      no_category_match: 'NO CATEGORY MATCH',
+      non_fashion_blocklist: 'BLOCKLISTED',
+      no_price: 'NO PRICE',
+    }
+
+    const statsEl = document.getElementById('skip-stats')
+    if (!data.length) {
+      statsEl.innerHTML = '<div style="color:var(--gray);font-size:14px;padding:24px 0">No skipped products in the last 30 days</div>'
+      return
+    }
+
+    for (const row of data) {
+      const label = LABELS[row.skip_reason] || row.skip_reason.toUpperCase().replace(/_/g, ' ')
+      const div = document.createElement('div')
+      div.className = 'stat'
+      div.innerHTML = `<div class="stat-num">${row.count}</div><div class="stat-label">${label}</div>`
+      statsEl.appendChild(div)
+    }
+
+    const tablesEl = document.getElementById('skip-tables')
+    for (const row of data) {
+      if (!row.examples.length) continue
+      const label = LABELS[row.skip_reason] || row.skip_reason
+      const section = document.createElement('div')
+      section.style.marginBottom = '40px'
+      section.innerHTML = `
+        <p class="section-title" style="margin-top:32px">${label} — RECENT EXAMPLES</p>
+        <table>
+          <thead>
+            <tr>
+              <th>TITLE</th>
+              <th>PRODUCT TYPE</th>
+              <th>ATTEMPTED CATEGORY</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${row.examples.map(e => `
+              <tr>
+                <td>${e.title || '—'}</td>
+                <td style="color:var(--gray);font-size:12px">${e.product_type || '—'}</td>
+                <td style="color:var(--gray);font-size:12px">${e.attempted_category || '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `
+      tablesEl.appendChild(section)
+    }
+  } catch (err) {
+    console.warn('Failed to load skipped summary', err)
+  }
+}
+
 </script>
 </body>
 </html>
