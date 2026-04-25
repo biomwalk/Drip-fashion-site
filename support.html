@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support — DRIP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink: #FF2D78;
+      --black: #0A0A0A;
+      --white: #FAFAFA;
+      --gray: #888;
+      --border: rgba(255,255,255,0.08);
+      --surface: rgba(255,255,255,0.04);
+    }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      padding: 24px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      background: rgba(10,10,10,0.7);
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 6px;
+      color: var(--pink);
+      text-decoration: none;
+    }
+
+    nav a.nav-link {
+      color: var(--gray);
+      text-decoration: none;
+      font-size: 13px;
+      letter-spacing: 1px;
+      transition: color 0.2s;
+    }
+    nav a.nav-link:hover { color: var(--white); }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 140px 40px 100px;
+    }
+
+    .page-label {
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: var(--pink);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 8vw, 80px);
+      letter-spacing: 4px;
+      line-height: 1;
+      margin-bottom: 24px;
+    }
+
+    .intro {
+      font-size: 15px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 300;
+      max-width: 520px;
+      margin-bottom: 64px;
+    }
+
+    /* ── FAQ ── */
+    .faq-section h2 {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--pink);
+      margin-bottom: 20px;
+    }
+
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 64px;
+    }
+
+    .faq-item {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden;
+    }
+
+    .faq-question {
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: left;
+      padding: 18px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: background 0.2s;
+    }
+    .faq-question:hover { background: rgba(255,255,255,0.04); }
+
+    .faq-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      position: relative;
+      opacity: 0.4;
+      transition: opacity 0.2s, transform 0.3s;
+    }
+    .faq-icon::before,
+    .faq-icon::after {
+      content: '';
+      position: absolute;
+      background: var(--white);
+      border-radius: 1px;
+    }
+    .faq-icon::before { width: 12px; height: 1.5px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .faq-icon::after  { width: 1.5px; height: 12px; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: transform 0.3s, opacity 0.3s; }
+
+    .faq-item.open .faq-icon { opacity: 1; }
+    .faq-item.open .faq-icon::after { transform: translate(-50%, -50%) rotate(90deg); opacity: 0; }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.2s;
+    }
+
+    .faq-item.open .faq-answer {
+      max-height: 300px;
+    }
+
+    .faq-answer-inner {
+      padding: 0 20px 20px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 300;
+      line-height: 1.7;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    /* ── Contact ── */
+    .contact-section h2 {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--pink);
+      margin-bottom: 20px;
+    }
+
+    .contact-card {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .contact-card p {
+      font-size: 15px;
+      color: rgba(255,255,255,0.6);
+      font-weight: 300;
+      max-width: 360px;
+    }
+
+    .btn-primary {
+      background: var(--pink);
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.2s;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    footer .logo { font-size: 20px; }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      font-size: 12px;
+      color: var(--gray);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--white); }
+
+    footer .copy {
+      font-size: 12px;
+      color: rgba(255,255,255,0.2);
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 20px 24px; }
+      main { padding: 120px 24px 80px; }
+      .contact-card { flex-direction: column; }
+      footer { flex-direction: column; align-items: flex-start; padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="logo" href="/">DRIP</a>
+    <a class="nav-link" href="/">Home</a>
+  </nav>
+
+  <main>
+    <p class="page-label">Help</p>
+    <h1>Support</h1>
+    <p class="intro">Drip is in early access. If you're experiencing issues or have feedback, we'd love to hear from you.</p>
+
+    <div class="faq-section">
+      <h2>Common questions</h2>
+      <div class="faq-list">
+
+        <div class="faq-item">
+          <button class="faq-question">
+            A brand I follow isn't showing products
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">Some brands take time to scrape after being added. If products haven't appeared within 24 hours, reach out and we'll look into it.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            A price looks wrong
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">Prices are pulled from brand websites and may occasionally be out of date. Always verify the final price on the brand's site before purchasing.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            I want to add a brand that's not on Shopify
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">We currently support Shopify-based stores. Support for other platforms is coming — let us know which brands you'd like to see and we'll prioritise them.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            How do returns work?
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">Returns are handled directly by the brand you purchased from. Drip is not involved in the transaction — check the brand's website for their return policy.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            How do I delete my account?
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">Email us at biomwalk@gmail.com with the subject "Delete my account" and we'll process your request within 30 days.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            Is my payment information stored by Drip?
+            <span class="faq-icon"></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">No. Purchases are completed directly on the brand's website. Drip never sees or stores your payment details.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="contact-section">
+      <h2>Still need help?</h2>
+      <div class="contact-card">
+        <p>Can't find what you're looking for? Send us an email and we'll get back to you as soon as we can.</p>
+        <a class="btn-primary" href="mailto:biomwalk@gmail.com?subject=Drip App Support">Email Support</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <a class="logo" href="/">DRIP</a>
+    <div class="footer-links">
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/support.html">Support</a>
+      <a href="mailto:biomwalk@gmail.com">Contact</a>
+    </div>
+    <span class="copy">&copy; 2026 Drip</span>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.faq-question').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        if (!isOpen) item.classList.add('open');
+      });
+    });
+  </script>
+
+</body>
+</html>
