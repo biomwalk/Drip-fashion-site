@@ -68,6 +68,30 @@
     .approve-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .approved { color: #4CAF50; font-size: 12px; font-weight: 500; }
     #dashboard { display: none; }
+    .priority-high { color: #FF2D78; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+    .lang-tag { font-size: 11px; color: var(--gray); background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 3px; }
+    .dispute-note { font-size: 11px; color: #ffaa00; margin-top: 4px; }
+    .config-panel {
+      display: none; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); padding: 16px; margin-top: 8px;
+    }
+    .config-panel.open { display: block; }
+    .config-label { font-size: 11px; letter-spacing: 1px; color: var(--gray); margin-bottom: 8px; display: block; }
+    .cat-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .cat-chip {
+      font-size: 11px; padding: 4px 10px; border: 1px solid var(--border);
+      cursor: pointer; user-select: none; transition: all 0.15s;
+    }
+    .cat-chip.selected { border-color: var(--pink); color: var(--pink); background: rgba(255,45,120,0.08); }
+    .config-input {
+      width: 100%; padding: 8px 10px; background: var(--surface);
+      border: 1px solid var(--border); color: var(--white);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; margin-bottom: 8px;
+    }
+    .config-input:focus { border-color: var(--pink); outline: none; }
+    .config-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .config-toggle { font-size: 11px; color: var(--gray); cursor: pointer; text-decoration: underline; margin-top: 6px; display: inline-block; }
+    .config-toggle:hover { color: var(--pink); }
     .section-title { font-size: 11px; letter-spacing: 3px; color: var(--pink); margin-bottom: 16px; }
     .empty { color: var(--gray); font-size: 14px; padding: 40px 0; text-align: center; }
   </style>
@@ -113,6 +137,7 @@
           <th>BRAND</th>
           <th>SHOPIFY</th>
           <th>CONFIDENCE</th>
+          <th>LANG</th>
           <th>SUBMITTED</th>
           <th></th>
         </tr>
@@ -120,6 +145,24 @@
       <tbody id="brand-rows"></tbody>
     </table>
     <div id="empty-state" class="empty" style="display:none">No brands pending review 🎉</div>
+  </div>
+
+  <div style="margin-top:60px">
+    <p class="section-title">NON-ENGLISH / UNDETECTED LANGUAGE QUEUE</p>
+    <div id="lang-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>BRAND</th>
+            <th>LANGUAGE</th>
+            <th>SUBMITTED</th>
+            <th>NOTES</th>
+          </tr>
+        </thead>
+        <tbody id="lang-rows"></tbody>
+      </table>
+      <div id="lang-empty" class="empty" style="display:none">No non-English brands pending 🎉</div>
+    </div>
   </div>
 
   <div style="margin-top:60px">
@@ -138,7 +181,42 @@ function doLogin() {
   if (!val) return
   adminToken = val
   loadDashboard()
-    loadSkippedSummary()
+  loadSkippedSummary()
+  loadLanguageQueue()
+}
+
+async function loadLanguageQueue() {
+  // Fetch manual_review brands that were flagged for language issues
+  // These come from the same pending endpoint — we filter client-side by language
+  try {
+    const res = await fetch(`${API}/brands/admin/pending?token=${adminToken}`)
+    if (!res.ok) return
+    const brands = await res.json()
+    const langBrands = brands.filter(b => b.language_detected && b.language_detected !== 'en')
+    const tbody = document.getElementById('lang-rows')
+    tbody.innerHTML = ''
+    if (langBrands.length === 0) {
+      document.getElementById('lang-wrap').querySelector('table').style.display = 'none'
+      document.getElementById('lang-empty').style.display = 'block'
+      return
+    }
+    for (const b of langBrands) {
+      const date = new Date(b.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const tr = document.createElement('tr')
+      tr.innerHTML = `
+        <td>
+          <div style="font-weight:500">${b.name}</div>
+          <div class="domain"><a href="https://${b.domain}" target="_blank" style="color:var(--gray)">${b.domain}</a></div>
+        </td>
+        <td><span class="lang-tag">${b.language_detected || '?'}</span></td>
+        <td style="color:var(--gray);font-size:13px">${date}</td>
+        <td style="color:var(--gray);font-size:12px">${b.user_dispute_note || '—'}</td>
+      `
+      tbody.appendChild(tr)
+    }
+  } catch (err) {
+    console.warn('Failed to load language queue', err)
+  }
 }
 
 document.getElementById('token-input').addEventListener('keydown', e => {
@@ -180,17 +258,39 @@ async function loadDashboard() {
     for (const b of brands) {
       const date = new Date(b.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       const score = b.fashion_confidence_score ? Math.round(b.fashion_confidence_score) : '?'
+      const isHighPriority = b.review_priority === 'high'
+      const langDisplay = b.language_detected || b.queue_language_detected || '—'
       const tr = document.createElement('tr')
       tr.id = 'row-' + b.id
+      const catChips = CATEGORIES.map(cat =>
+        `<span class="cat-chip" data-cat="${cat}" onclick="toggleCategory('${b.id}', '${cat}')">${cat}</span>`
+      ).join('')
       tr.innerHTML = `
         <td>
-          <div style="font-weight:500">${b.name}</div>
+          <div style="font-weight:500">
+            ${isHighPriority ? '<span class="priority-high">⚡ HIGH PRIORITY &nbsp;</span>' : ''}${b.name}
+          </div>
           <div class="domain"><a href="https://${b.domain}" target="_blank" style="color:var(--gray)">${b.domain}</a></div>
+          ${b.user_dispute_note ? `<div class="dispute-note">💬 ${b.user_dispute_note}</div>` : ''}
         </td>
         <td><span class="${b.is_shopify ? 'shopify-yes' : 'shopify-no'}">${b.is_shopify ? '✓ Shopify' : '✗ Other'}</span></td>
         <td><span class="score">${score}%</span></td>
+        <td><span class="lang-tag">${langDisplay}</span></td>
         <td style="color:var(--gray);font-size:13px">${date}</td>
-        <td><button class="approve-btn" id="btn-${b.id}" onclick="approve('${b.id}', '${b.name}')">Approve</button></td>
+        <td>
+          <span class="config-toggle" onclick="toggleConfigPanel('${b.id}')">⚙ Config</span>
+          <div class="config-panel" id="config-${b.id}">
+            <span class="config-label">ALLOWED CATEGORIES (leave blank for all)</span>
+            <div class="cat-grid">${catChips}</div>
+            <span class="config-label">SHOPIFY COLLECTION HANDLE (optional)</span>
+            <input class="config-input" id="col-${b.id}" placeholder="e.g. clothing, style, apparel" />
+            <span class="config-label">NOTES</span>
+            <input class="config-input" id="notes-${b.id}" placeholder="Why was this config set?" />
+          </div>
+          <div class="config-actions">
+            <button class="approve-btn" id="btn-${b.id}" onclick="approve('${b.id}', '${b.name}')">Approve</button>
+          </div>
+        </td>
       `
       tbody.appendChild(tr)
     }
@@ -200,14 +300,52 @@ async function loadDashboard() {
   }
 }
 
+const CATEGORIES = ['tops','outerwear','bottoms','footwear','accessories','headwear','bags','jewelry','dresses','swimwear','misc']
+const brandConfigs = {}  // brandId -> { allowedCategories: [], collectionScope: '', notes: '' }
+
+function getConfig(brandId) {
+  if (!brandConfigs[brandId]) brandConfigs[brandId] = { allowedCategories: [], collectionScope: '', notes: '' }
+  return brandConfigs[brandId]
+}
+
+function toggleConfigPanel(brandId) {
+  const panel = document.getElementById('config-' + brandId)
+  panel.classList.toggle('open')
+}
+
+function toggleCategory(brandId, cat) {
+  const config = getConfig(brandId)
+  const idx = config.allowedCategories.indexOf(cat)
+  if (idx === -1) config.allowedCategories.push(cat)
+  else config.allowedCategories.splice(idx, 1)
+  // Update chip UI
+  document.querySelectorAll(`#config-${brandId} .cat-chip`).forEach(chip => {
+    chip.classList.toggle('selected', config.allowedCategories.includes(chip.dataset.cat))
+  })
+}
+
 async function approve(brandId, brandName) {
+  const config = getConfig(brandId)
   const btn = document.getElementById('btn-' + brandId)
   btn.disabled = true
   btn.textContent = 'Approving...'
+
+  const body = {}
+  if (config.allowedCategories.length > 0) body.allowed_categories = config.allowedCategories
+  const colInput = document.getElementById('col-' + brandId)
+  if (colInput?.value.trim()) body.collection_scope = colInput.value.trim()
+  const notesInput = document.getElementById('notes-' + brandId)
+  if (notesInput?.value.trim()) body.notes = notesInput.value.trim()
+
   try {
-    const res = await fetch(`${API}/brands/admin/approve/${brandId}?token=${adminToken}`, { method: 'POST' })
+    const res = await fetch(`${API}/brands/admin/approve/${brandId}?token=${adminToken}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
     if (res.ok) {
-      btn.outerHTML = '<span class="approved">✓ Approved</span>'
+      document.getElementById('row-' + brandId).innerHTML =
+        `<td colspan="6" style="color:#4CAF50;padding:16px">✓ ${brandName} approved${config.allowedCategories.length ? ' (categories: ' + config.allowedCategories.join(', ') + ')' : ''}</td>`
     } else {
       btn.disabled = false
       btn.textContent = 'Retry'
