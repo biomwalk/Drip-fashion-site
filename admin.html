@@ -166,6 +166,26 @@
   </div>
 
   <div style="margin-top:60px">
+    <p class="section-title">SUBMITTED / UNKNOWN PLATFORM</p>
+    <p style="color:var(--gray);font-size:13px;margin-bottom:24px">Brands users submitted that we can't yet scrape. Sorted by demand. Use this to prioritise platform engineering effort.</p>
+    <div id="unknown-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>DOMAIN</th>
+            <th>PLATFORM DETECTED</th>
+            <th>REASON</th>
+            <th>SUBMISSIONS</th>
+            <th>LAST SUBMITTED</th>
+          </tr>
+        </thead>
+        <tbody id="unknown-rows"></tbody>
+      </table>
+      <div id="unknown-empty" class="empty" style="display:none">No unknown submissions — great coverage! 🎉</div>
+    </div>
+  </div>
+
+  <div style="margin-top:60px">
     <p class="section-title">TAXONOMY HEALTH — LAST 30 DAYS</p>
     <div class="stats" id="skip-stats" style="margin-bottom:32px"></div>
     <div id="skip-tables"></div>
@@ -183,6 +203,7 @@ function doLogin() {
   loadDashboard()
   loadSkippedSummary()
   loadLanguageQueue()
+  loadUnknownSubmissions()
 }
 
 async function loadLanguageQueue() {
@@ -414,6 +435,40 @@ async function loadSkippedSummary() {
     }
   } catch (err) {
     console.warn('Failed to load skipped summary', err)
+  }
+}
+
+async function loadUnknownSubmissions() {
+  try {
+    const res = await fetch(`${API}/brands/admin/unknown-submissions?token=${adminToken}`)
+    if (!res.ok) return
+    const data = await res.json()
+    const tbody = document.getElementById('unknown-rows')
+    tbody.innerHTML = ''
+    if (!data.length) {
+      document.getElementById('unknown-wrap').querySelector('table').style.display = 'none'
+      document.getElementById('unknown-empty').style.display = 'block'
+      return
+    }
+    for (const s of data) {
+      const lastDate = new Date(s.last_submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const platformLabel = s.platform_detected === 'woocommerce' ? 'WooCommerce (auth required)' : s.platform_detected === 'unknown' ? 'Unknown' : s.platform_detected
+      const reason = s.error_message || '—'
+      const tr = document.createElement('tr')
+      tr.innerHTML = `
+        <td>
+          <div style="font-weight:500">${s.url}</div>
+          <div class="domain"><a href="https://${s.url}" target="_blank" style="color:var(--gray)">${s.url}</a></div>
+        </td>
+        <td style="color:var(--gray);font-size:13px">${platformLabel}</td>
+        <td style="color:var(--gray);font-size:12px">${reason}</td>
+        <td><span class="score">${s.submission_count}</span></td>
+        <td style="color:var(--gray);font-size:13px">${lastDate}</td>
+      `
+      tbody.appendChild(tr)
+    }
+  } catch (err) {
+    console.warn('Failed to load unknown submissions', err)
   }
 }
 
