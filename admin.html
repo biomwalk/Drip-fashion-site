@@ -4,115 +4,283 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Drip Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --pink: #FF2D78;
+      --pink-dim: rgba(255,45,120,0.12);
       --black: #0A0A0A;
-      --white: #FAFAFA;
-      --gray: #888;
-      --surface: rgba(255,255,255,0.04);
-      --border: rgba(255,255,255,0.08);
+      --surface: #111111;
+      --surface2: #181818;
+      --white: #F0F0F0;
+      --gray: #666;
+      --gray2: #444;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --green: #2ECC71;
+      --amber: #F39C12;
+      --red: #E74C3C;
+      --mono: 'DM Mono', monospace;
     }
-    body { background: var(--black); color: var(--white); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
     nav {
-      padding: 20px 40px;
+      padding: 18px 40px;
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,10,0.95);
+      backdrop-filter: blur(12px);
     }
-    .logo { font-size: 20px; font-weight: 700; letter-spacing: 4px; color: var(--pink); }
-    .badge { font-size: 11px; color: var(--gray); letter-spacing: 2px; }
-    #login, #dashboard { max-width: 900px; margin: 60px auto; padding: 0 24px; }
-    h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
-    .sub { color: var(--gray); font-size: 14px; margin-bottom: 40px; }
-    input {
-      width: 100%; padding: 14px 16px;
-      background: var(--surface); border: 1px solid var(--border);
+    .logo { font-size: 18px; font-weight: 700; letter-spacing: 5px; color: var(--pink); font-family: var(--mono); }
+    .nav-right { display: flex; align-items: center; gap: 20px; }
+    .badge { font-size: 10px; color: var(--gray); letter-spacing: 3px; font-family: var(--mono); }
+    .signout { font-size: 11px; color: var(--gray); cursor: pointer; letter-spacing: 1px; text-decoration: underline; display: none; }
+    .signout:hover { color: var(--pink); }
+
+    /* ── LOGIN ── */
+    #login {
+      max-width: 420px; margin: 120px auto; padding: 0 24px;
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      padding: 40px;
+    }
+    .login-card h1 {
+      font-size: 22px; font-weight: 700; margin-bottom: 6px;
+      font-family: var(--mono); letter-spacing: 2px;
+    }
+    .login-card .sub { color: var(--gray); font-size: 13px; margin-bottom: 32px; }
+    .field {
+      width: 100%; padding: 13px 16px;
+      background: var(--surface2); border: 1px solid var(--border2);
       color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px;
-      margin-bottom: 12px; outline: none;
+      margin-bottom: 12px; outline: none; transition: border-color 0.15s;
     }
-    input:focus { border-color: var(--pink); }
-    button {
+    .field:focus { border-color: var(--pink); }
+    .btn-primary {
       background: var(--pink); color: white; border: none;
-      padding: 14px 32px; font-family: 'DM Sans', sans-serif;
-      font-size: 14px; font-weight: 500; cursor: pointer; width: 100%;
-      transition: opacity 0.2s;
+      padding: 13px 32px; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer; width: 100%;
+      letter-spacing: 1px; transition: opacity 0.2s;
     }
-    button:hover { opacity: 0.85; }
-    button.secondary {
-      background: transparent; border: 1px solid var(--border);
-      color: var(--white); width: auto; padding: 8px 20px; font-size: 12px;
+    .btn-primary:hover { opacity: 0.85; }
+    .error-msg { color: var(--red); font-size: 12px; margin-bottom: 12px; font-family: var(--mono); }
+
+    /* ── DASHBOARD ── */
+    #dashboard { display: none; max-width: 1000px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    .dash-header { margin-bottom: 32px; }
+    .dash-header h1 { font-size: 26px; font-weight: 700; font-family: var(--mono); letter-spacing: 2px; }
+    .dash-header .sub { color: var(--gray); font-size: 13px; margin-top: 6px; }
+
+    /* ── STATS BAR ── */
+    .stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border2); margin-bottom: 36px;
+      border: 1px solid var(--border2);
     }
-    button.secondary:hover { border-color: var(--pink); color: var(--pink); }
-    .error { color: #ff4444; font-size: 13px; margin-bottom: 12px; }
-    .stats { display: flex; gap: 1px; background: var(--border); margin-bottom: 32px; }
-    .stat { background: var(--black); padding: 24px 32px; flex: 1; }
-    .stat-num { font-size: 32px; font-weight: 700; color: var(--pink); }
-    .stat-label { font-size: 12px; color: var(--gray); letter-spacing: 1px; margin-top: 4px; }
+    .stat { background: var(--surface); padding: 20px 28px; }
+    .stat-num { font-size: 28px; font-weight: 700; color: var(--pink); font-family: var(--mono); }
+    .stat-label { font-size: 10px; color: var(--gray); letter-spacing: 2px; margin-top: 4px; font-family: var(--mono); }
+
+    /* ── TABS ── */
+    .tab-bar {
+      display: flex; border-bottom: 1px solid var(--border2);
+      margin-bottom: 28px; gap: 0;
+    }
+    .tab-btn {
+      padding: 12px 24px; font-size: 11px; font-weight: 600;
+      letter-spacing: 2px; color: var(--gray); cursor: pointer;
+      border: none; background: none; font-family: var(--mono);
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--white); }
+    .tab-btn.active { color: var(--pink); border-bottom-color: var(--pink); }
+    .tab-badge {
+      display: inline-block; background: var(--pink-dim);
+      color: var(--pink); font-size: 10px; padding: 1px 6px;
+      border-radius: 10px; margin-left: 6px; font-family: var(--mono);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── SECTION HEADERS ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-label {
+      font-size: 10px; letter-spacing: 3px; color: var(--pink);
+      font-family: var(--mono); font-weight: 500;
+    }
+    .section-desc { font-size: 12px; color: var(--gray); margin-top: 3px; }
+
+    /* ── SEARCH BAR ── */
+    .search-wrap { position: relative; margin-bottom: 14px; }
+    .search-input {
+      width: 100%; padding: 10px 14px 10px 36px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px;
+      outline: none; transition: border-color 0.15s;
+    }
+    .search-input:focus { border-color: var(--pink); }
+    .search-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--gray); font-size: 14px; pointer-events: none;
+    }
+
+    /* ── SCROLLABLE TABLE CONTAINER ── */
+    .scroll-table {
+      height: 520px; overflow-y: auto;
+      border: 1px solid var(--border2);
+      scrollbar-width: thin;
+      scrollbar-color: var(--gray2) transparent;
+    }
+    .scroll-table::-webkit-scrollbar { width: 4px; }
+    .scroll-table::-webkit-scrollbar-track { background: transparent; }
+    .scroll-table::-webkit-scrollbar-thumb { background: var(--gray2); border-radius: 2px; }
+
+    /* ── TABLES ── */
     table { width: 100%; border-collapse: collapse; }
-    th { font-size: 11px; letter-spacing: 2px; color: var(--gray); text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-    td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
-    tr:hover td { background: var(--surface); }
-    .score { color: var(--pink); font-weight: 700; }
-    .shopify-yes { color: #4CAF50; font-size: 12px; }
-    .shopify-no { color: #ff4444; font-size: 12px; }
-    .domain { color: var(--gray); font-size: 12px; }
-    .approve-btn {
+    thead th {
+      font-size: 10px; letter-spacing: 2px; color: var(--gray);
+      text-align: left; padding: 12px 16px;
+      border-bottom: 1px solid var(--border2);
+      background: var(--surface); position: sticky; top: 0; z-index: 10;
+      font-family: var(--mono); white-space: nowrap;
+    }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { color: var(--white); }
+    .sort-arrow { margin-left: 4px; opacity: 0.5; }
+    .sort-arrow.active { opacity: 1; color: var(--pink); }
+    td {
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      font-size: 13px; vertical-align: middle;
+    }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .domain-link { color: var(--gray); font-size: 11px; font-family: var(--mono); }
+    .domain-link a { color: var(--gray); text-decoration: none; }
+    .domain-link a:hover { color: var(--pink); }
+
+    /* ── BADGES & LABELS ── */
+    .score-high { color: var(--green); font-weight: 700; font-family: var(--mono); }
+    .score-mid { color: var(--amber); font-weight: 700; font-family: var(--mono); }
+    .score-low { color: var(--red); font-weight: 700; font-family: var(--mono); }
+    .shopify-yes { color: var(--green); font-size: 11px; font-family: var(--mono); }
+    .shopify-no { color: var(--red); font-size: 11px; font-family: var(--mono); }
+    .lang-tag {
+      font-size: 10px; color: var(--gray); background: rgba(255,255,255,0.06);
+      padding: 2px 7px; border-radius: 2px; font-family: var(--mono);
+    }
+    .priority-high { color: var(--pink); font-size: 10px; font-weight: 700; letter-spacing: 1px; font-family: var(--mono); }
+    .dispute-note { font-size: 11px; color: var(--amber); margin-top: 4px; }
+    .count-badge { color: var(--pink); font-weight: 700; font-family: var(--mono); }
+
+    /* ── ACTION BUTTONS ── */
+    .btn-approve {
       background: var(--pink); color: white; border: none;
-      padding: 6px 16px; font-size: 12px; cursor: pointer;
-      font-family: 'DM Sans', sans-serif; font-weight: 500;
+      padding: 5px 14px; font-size: 11px; cursor: pointer;
+      font-family: var(--mono); font-weight: 500; letter-spacing: 1px;
       transition: opacity 0.2s; white-space: nowrap;
     }
-    .approve-btn:hover { opacity: 0.8; }
-    .approve-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .approved { color: #4CAF50; font-size: 12px; font-weight: 500; }
-    #dashboard { display: none; }
-    .priority-high { color: #FF2D78; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
-    .lang-tag { font-size: 11px; color: var(--gray); background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 3px; }
-    .dispute-note { font-size: 11px; color: #ffaa00; margin-top: 4px; }
+    .btn-approve:hover { opacity: 0.8; }
+    .btn-approve:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-block {
+      background: transparent; color: var(--red); border: 1px solid rgba(231,76,60,0.4);
+      padding: 5px 14px; font-size: 11px; cursor: pointer;
+      font-family: var(--mono); font-weight: 500; letter-spacing: 1px;
+      transition: all 0.2s; white-space: nowrap; margin-left: 6px;
+    }
+    .btn-block:hover { background: rgba(231,76,60,0.1); border-color: var(--red); }
+    .btn-block:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-done { color: var(--green); font-size: 11px; font-family: var(--mono); font-weight: 600; }
+
+    /* ── CONFIG PANEL ── */
+    .config-toggle {
+      font-size: 10px; color: var(--gray); cursor: pointer;
+      text-decoration: underline; margin-top: 6px; display: inline-block;
+      font-family: var(--mono); letter-spacing: 1px;
+    }
+    .config-toggle:hover { color: var(--pink); }
     .config-panel {
       display: none; background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border); padding: 16px; margin-top: 8px;
+      border: 1px solid var(--border2); padding: 14px; margin-top: 8px;
     }
     .config-panel.open { display: block; }
-    .config-label { font-size: 11px; letter-spacing: 1px; color: var(--gray); margin-bottom: 8px; display: block; }
-    .cat-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .config-label {
+      font-size: 10px; letter-spacing: 1px; color: var(--gray);
+      margin-bottom: 8px; display: block; font-family: var(--mono);
+    }
+    .cat-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
     .cat-chip {
-      font-size: 11px; padding: 4px 10px; border: 1px solid var(--border);
+      font-size: 10px; padding: 3px 9px; border: 1px solid var(--border2);
       cursor: pointer; user-select: none; transition: all 0.15s;
+      font-family: var(--mono); letter-spacing: 1px;
     }
-    .cat-chip.selected { border-color: var(--pink); color: var(--pink); background: rgba(255,45,120,0.08); }
+    .cat-chip.selected { border-color: var(--pink); color: var(--pink); background: var(--pink-dim); }
     .config-input {
-      width: 100%; padding: 8px 10px; background: var(--surface);
-      border: 1px solid var(--border); color: var(--white);
-      font-family: 'DM Sans', sans-serif; font-size: 13px; margin-bottom: 8px;
+      width: 100%; padding: 8px 10px; background: var(--surface2);
+      border: 1px solid var(--border2); color: var(--white);
+      font-family: var(--mono); font-size: 12px; margin-bottom: 8px; outline: none;
     }
-    .config-input:focus { border-color: var(--pink); outline: none; }
-    .config-actions { display: flex; gap: 8px; margin-top: 8px; }
-    .config-toggle { font-size: 11px; color: var(--gray); cursor: pointer; text-decoration: underline; margin-top: 6px; display: inline-block; }
-    .config-toggle:hover { color: var(--pink); }
-    .section-title { font-size: 11px; letter-spacing: 3px; color: var(--pink); margin-bottom: 16px; }
-    .empty { color: var(--gray); font-size: 14px; padding: 40px 0; text-align: center; }
+    .config-input:focus { border-color: var(--pink); }
+    .config-actions { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      color: var(--gray); font-size: 13px; padding: 60px 0;
+      text-align: center; font-family: var(--mono);
+    }
+
+    /* ── TAXONOMY HEALTH ── */
+    .tax-stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1px; background: var(--border2); margin-bottom: 32px;
+      border: 1px solid var(--border2);
+    }
+    .tax-stat { background: var(--surface); padding: 20px 24px; }
+    .tax-stat-num { font-size: 24px; font-weight: 700; color: var(--pink); font-family: var(--mono); }
+    .tax-stat-label { font-size: 10px; color: var(--gray); letter-spacing: 1px; margin-top: 4px; font-family: var(--mono); }
+
+    .section-divider { margin: 40px 0 28px; border: none; border-top: 1px solid var(--border2); }
   </style>
 </head>
 <body>
 <nav>
   <span class="logo">DRIP</span>
-  <span class="badge">ADMIN DASHBOARD</span>
+  <div class="nav-right">
+    <span class="badge">ADMIN</span>
+    <span class="signout" id="signout-btn" onclick="signOut()">Sign out</span>
+  </div>
 </nav>
 
 <div id="login">
-  <h1>Admin Access</h1>
-  <p class="sub">Enter your admin token to continue.</p>
-  <div id="login-error" class="error" style="display:none"></div>
-  <input type="password" id="token-input" placeholder="Admin token" />
-  <button onclick="doLogin()">Sign In</button>
+  <div class="login-card">
+    <h1>ADMIN ACCESS</h1>
+    <p class="sub">Enter your admin token to continue.</p>
+    <div id="login-error" class="error-msg" style="display:none"></div>
+    <input type="password" class="field" id="token-input" placeholder="Admin token" />
+    <button class="btn-primary" onclick="doLogin()">SIGN IN</button>
+  </div>
 </div>
 
 <div id="dashboard">
-  <h1>Brand Review Queue</h1>
-  <p class="sub" id="queue-sub">Loading...</p>
+  <div class="dash-header">
+    <h1>BRAND REVIEW</h1>
+    <p class="sub" id="queue-sub">Loading...</p>
+  </div>
 
   <div class="stats">
     <div class="stat">
@@ -129,27 +297,52 @@
     </div>
   </div>
 
-  <p class="section-title">PENDING BRANDS</p>
-  <div id="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>BRAND</th>
-          <th>SHOPIFY</th>
-          <th>CONFIDENCE</th>
-          <th>LANG</th>
-          <th>SUBMITTED</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="brand-rows"></tbody>
-    </table>
-    <div id="empty-state" class="empty" style="display:none">No brands pending review 🎉</div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('review')" id="tab-review">
+      REVIEW QUEUE <span class="tab-badge" id="badge-review">0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('submissions')" id="tab-submissions">
+      SUBMISSIONS <span class="tab-badge" id="badge-submissions">0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('taxonomy')" id="tab-taxonomy">
+      TAXONOMY HEALTH
+    </button>
   </div>
 
-  <div style="margin-top:60px">
-    <p class="section-title">NON-ENGLISH / UNDETECTED LANGUAGE QUEUE</p>
-    <div id="lang-wrap">
+  <!-- ── TAB 1: REVIEW QUEUE ── -->
+  <div class="tab-panel active" id="panel-review">
+    <div class="section-header">
+      <div>
+        <div class="section-label">PENDING BRANDS</div>
+        <div class="section-desc">Brands awaiting ops approval before scraping</div>
+      </div>
+    </div>
+    <div class="scroll-table" id="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>BRAND</th>
+            <th>PLATFORM</th>
+            <th>CONFIDENCE</th>
+            <th>LANG</th>
+            <th>SUBMITTED</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="brand-rows"></tbody>
+      </table>
+      <div id="empty-state" class="empty" style="display:none">No brands pending review 🎉</div>
+    </div>
+
+    <hr class="section-divider">
+
+    <div class="section-header">
+      <div>
+        <div class="section-label">NON-ENGLISH / UNDETECTED LANGUAGE</div>
+        <div class="section-desc">Brands detected as non-English — queued for manual review</div>
+      </div>
+    </div>
+    <div class="scroll-table" id="lang-wrap">
       <table>
         <thead>
           <tr>
@@ -165,37 +358,56 @@
     </div>
   </div>
 
-  <div style="margin-top:60px">
-    <p class="section-title">LOW CONFIDENCE SUBMISSIONS</p>
-    <p style="color:var(--gray);font-size:13px;margin-bottom:24px">Brands that scored 10–69% confidence. Could be taxonomy bugs, mixed-category stores, or genuine non-fashion. Sorted highest score first.</p>
-    <div id="lowconf-wrap">
+  <!-- ── TAB 2: SUBMISSIONS ── -->
+  <div class="tab-panel" id="panel-submissions">
+
+    <div class="section-header">
+      <div>
+        <div class="section-label">LOW CONFIDENCE</div>
+        <div class="section-desc">Scored 10–69% — taxonomy bugs, mixed-category stores, or non-fashion</div>
+      </div>
+    </div>
+    <div class="scroll-table">
       <table>
         <thead>
           <tr>
             <th>BRAND</th>
-            <th>CONFIDENCE</th>
+            <th class="sortable" onclick="sortLowConf()" id="th-score">
+              CONFIDENCE <span class="sort-arrow active" id="arrow-score">↓</span>
+            </th>
             <th>PLATFORM</th>
-            <th>LANGUAGE</th>
+            <th>LANG</th>
             <th>SUBMITTED</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="lowconf-rows"></tbody>
       </table>
       <div id="lowconf-empty" class="empty" style="display:none">No low confidence submissions 🎉</div>
     </div>
-  </div>
 
-  <div style="margin-top:60px">
-    <p class="section-title">SUBMITTED / UNKNOWN PLATFORM</p>
-    <p style="color:var(--gray);font-size:13px;margin-bottom:24px">Brands users submitted that we can't yet scrape. Sorted by demand. Use this to prioritise platform engineering effort.</p>
-    <div id="unknown-wrap">
+    <hr class="section-divider">
+
+    <div class="section-header">
+      <div>
+        <div class="section-label">UNKNOWN PLATFORM</div>
+        <div class="section-desc">Can't yet scrape — demand signal for platform engineering effort</div>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" id="unknown-search" placeholder="Filter by domain..." oninput="filterUnknown()" />
+    </div>
+    <div class="scroll-table">
       <table>
         <thead>
           <tr>
             <th>DOMAIN</th>
-            <th>PLATFORM DETECTED</th>
+            <th>PLATFORM</th>
             <th>REASON</th>
-            <th>SUBMISSIONS</th>
+            <th class="sortable" onclick="sortUnknown()" id="th-count">
+              SUBMISSIONS <span class="sort-arrow active" id="arrow-count">↓</span>
+            </th>
             <th>LAST SUBMITTED</th>
           </tr>
         </thead>
@@ -205,9 +417,15 @@
     </div>
   </div>
 
-  <div style="margin-top:60px">
-    <p class="section-title">TAXONOMY HEALTH — LAST 30 DAYS</p>
-    <div class="stats" id="skip-stats" style="margin-bottom:32px"></div>
+  <!-- ── TAB 3: TAXONOMY HEALTH ── -->
+  <div class="tab-panel" id="panel-taxonomy">
+    <div class="section-header">
+      <div>
+        <div class="section-label">TAXONOMY HEALTH — LAST 30 DAYS</div>
+        <div class="section-desc">Products skipped during scraping, grouped by reason</div>
+      </div>
+    </div>
+    <div class="tax-stats" id="skip-stats"></div>
     <div id="skip-tables"></div>
   </div>
 </div>
@@ -216,10 +434,35 @@
 const API = 'https://drip-production-a900.up.railway.app/api/v1'
 let adminToken = ''
 
+// ── Auth with localStorage persistence ──────────────────────────────────────
+
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('drip_admin_token')
+  if (saved) {
+    adminToken = saved
+    document.getElementById('token-input').value = saved
+    loadAll()
+  }
+})
+
 function doLogin() {
   const val = document.getElementById('token-input').value.trim()
   if (!val) return
   adminToken = val
+  localStorage.setItem('drip_admin_token', val)
+  loadAll()
+}
+
+function signOut() {
+  localStorage.removeItem('drip_admin_token')
+  adminToken = ''
+  document.getElementById('login').style.display = 'block'
+  document.getElementById('dashboard').style.display = 'none'
+  document.getElementById('signout-btn').style.display = 'none'
+  document.getElementById('token-input').value = ''
+}
+
+function loadAll() {
   loadDashboard()
   loadSkippedSummary()
   loadLanguageQueue()
@@ -227,9 +470,148 @@ function doLogin() {
   loadLowConfidenceSubmissions()
 }
 
+document.getElementById('token-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin()
+})
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'))
+  document.getElementById('tab-' + name).classList.add('active')
+  document.getElementById('panel-' + name).classList.add('active')
+}
+
+// ── Review Queue ─────────────────────────────────────────────────────────────
+
+const CATEGORIES = ['tops','outerwear','bottoms','footwear','accessories','headwear','bags','jewelry','dresses','swimwear','misc']
+const brandConfigs = {}
+
+function getConfig(brandId) {
+  if (!brandConfigs[brandId]) brandConfigs[brandId] = { allowedCategories: [], collectionScope: '', notes: '' }
+  return brandConfigs[brandId]
+}
+
+function toggleConfigPanel(brandId) {
+  document.getElementById('config-' + brandId).classList.toggle('open')
+}
+
+function toggleCategory(brandId, cat) {
+  const config = getConfig(brandId)
+  const idx = config.allowedCategories.indexOf(cat)
+  if (idx === -1) config.allowedCategories.push(cat)
+  else config.allowedCategories.splice(idx, 1)
+  document.querySelectorAll(`#config-${brandId} .cat-chip`).forEach(chip => {
+    chip.classList.toggle('selected', config.allowedCategories.includes(chip.dataset.cat))
+  })
+}
+
+async function loadDashboard() {
+  try {
+    const res = await fetch(`${API}/brands/admin/pending?token=${adminToken}`)
+    if (res.status === 401) {
+      document.getElementById('login-error').textContent = 'Invalid token.'
+      document.getElementById('login-error').style.display = 'block'
+      return
+    }
+    const brands = await res.json()
+    document.getElementById('login').style.display = 'none'
+    document.getElementById('dashboard').style.display = 'block'
+    document.getElementById('signout-btn').style.display = 'inline'
+
+    const shopifyCount = brands.filter(b => b.is_shopify).length
+    const avgScore = brands.length
+      ? Math.round(brands.reduce((s, b) => s + (parseFloat(b.fashion_confidence_score) || 0), 0) / brands.length)
+      : 0
+
+    document.getElementById('stat-pending').textContent = brands.length
+    document.getElementById('stat-shopify').textContent = shopifyCount
+    document.getElementById('stat-avg-score').textContent = brands.length ? avgScore + '%' : '—'
+    document.getElementById('queue-sub').textContent =
+      brands.length + ' brand' + (brands.length !== 1 ? 's' : '') + ' awaiting review'
+    document.getElementById('badge-review').textContent = brands.length
+
+    const tbody = document.getElementById('brand-rows')
+    tbody.innerHTML = ''
+
+    if (brands.length === 0) {
+      document.getElementById('table-wrap').querySelector('table').style.display = 'none'
+      document.getElementById('empty-state').style.display = 'block'
+      return
+    }
+
+    for (const b of brands) {
+      const date = new Date(b.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const score = b.fashion_confidence_score ? Math.round(parseFloat(b.fashion_confidence_score)) : '?'
+      const scoreClass = score >= 80 ? 'score-high' : score >= 60 ? 'score-mid' : 'score-low'
+      const isHighPriority = b.review_priority === 'high'
+      const langDisplay = b.language_detected || b.queue_language_detected || '—'
+      const tr = document.createElement('tr')
+      tr.id = 'row-' + b.id
+      const catChips = CATEGORIES.map(cat =>
+        `<span class="cat-chip" data-cat="${cat}" onclick="toggleCategory('${b.id}', '${cat}')">${cat}</span>`
+      ).join('')
+      tr.innerHTML = `
+        <td>
+          <div style="font-weight:600">
+            ${isHighPriority ? '<span class="priority-high">⚡ HIGH &nbsp;</span>' : ''}${b.name}
+          </div>
+          <div class="domain-link"><a href="https://${b.domain}" target="_blank">${b.domain}</a></div>
+          ${b.user_dispute_note ? `<div class="dispute-note">💬 ${b.user_dispute_note}</div>` : ''}
+        </td>
+        <td><span class="${b.is_shopify ? 'shopify-yes' : 'shopify-no'}">${b.is_shopify ? '✓ Shopify' : '✗ Other'}</span></td>
+        <td><span class="${scoreClass}">${score}%</span></td>
+        <td><span class="lang-tag">${langDisplay}</span></td>
+        <td style="color:var(--gray);font-size:12px;font-family:var(--mono)">${date}</td>
+        <td style="min-width:160px">
+          <span class="config-toggle" onclick="toggleConfigPanel('${b.id}')">⚙ config</span>
+          <div class="config-panel" id="config-${b.id}">
+            <span class="config-label">ALLOWED CATEGORIES</span>
+            <div class="cat-grid">${catChips}</div>
+            <span class="config-label">COLLECTION HANDLE</span>
+            <input class="config-input" id="col-${b.id}" placeholder="e.g. clothing" />
+            <span class="config-label">NOTES</span>
+            <input class="config-input" id="notes-${b.id}" placeholder="Why was this set?" />
+          </div>
+          <div class="config-actions">
+            <button class="btn-approve" id="btn-${b.id}" onclick="approve('${b.id}', '${b.name}')">APPROVE</button>
+          </div>
+        </td>
+      `
+      tbody.appendChild(tr)
+    }
+  } catch (err) {
+    document.getElementById('login-error').textContent = 'Connection error.'
+    document.getElementById('login-error').style.display = 'block'
+  }
+}
+
+async function approve(brandId, brandName) {
+  const config = getConfig(brandId)
+  const btn = document.getElementById('btn-' + brandId)
+  btn.disabled = true
+  btn.textContent = '...'
+  const body = {}
+  if (config.allowedCategories.length > 0) body.allowed_categories = config.allowedCategories
+  const colInput = document.getElementById('col-' + brandId)
+  if (colInput?.value.trim()) body.collection_scope = colInput.value.trim()
+  const notesInput = document.getElementById('notes-' + brandId)
+  if (notesInput?.value.trim()) body.notes = notesInput.value.trim()
+  try {
+    const res = await fetch(`${API}/brands/admin/approve/${brandId}?token=${adminToken}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    })
+    if (res.ok) {
+      document.getElementById('row-' + brandId).innerHTML =
+        `<td colspan="6" style="color:var(--green);padding:14px;font-family:var(--mono);font-size:12px">✓ ${brandName} approved</td>`
+    } else { btn.disabled = false; btn.textContent = 'APPROVE' }
+  } catch { btn.disabled = false; btn.textContent = 'APPROVE' }
+}
+
+// ── Language Queue ────────────────────────────────────────────────────────────
+
 async function loadLanguageQueue() {
-  // Fetch manual_review brands that were flagged for language issues
-  // These come from the same pending endpoint — we filter client-side by language
   try {
     const res = await fetch(`${API}/brands/admin/pending?token=${adminToken}`)
     if (!res.ok) return
@@ -247,184 +629,194 @@ async function loadLanguageQueue() {
       const tr = document.createElement('tr')
       tr.innerHTML = `
         <td>
-          <div style="font-weight:500">${b.name}</div>
-          <div class="domain"><a href="https://${b.domain}" target="_blank" style="color:var(--gray)">${b.domain}</a></div>
+          <div style="font-weight:600">${b.name}</div>
+          <div class="domain-link"><a href="https://${b.domain}" target="_blank">${b.domain}</a></div>
         </td>
         <td><span class="lang-tag">${b.language_detected || '?'}</span></td>
-        <td style="color:var(--gray);font-size:13px">${date}</td>
+        <td style="color:var(--gray);font-size:12px;font-family:var(--mono)">${date}</td>
         <td style="color:var(--gray);font-size:12px">${b.user_dispute_note || '—'}</td>
       `
       tbody.appendChild(tr)
     }
-  } catch (err) {
-    console.warn('Failed to load language queue', err)
-  }
+  } catch (err) { console.warn('Failed to load language queue', err) }
 }
 
-document.getElementById('token-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin()
-})
+// ── Low Confidence ────────────────────────────────────────────────────────────
 
-async function loadDashboard() {
+let lowConfData = []
+let lowConfAsc = false
+
+async function loadLowConfidenceSubmissions() {
   try {
-    const res = await fetch(`${API}/brands/admin/pending?token=${adminToken}`)
-    if (res.status === 401) {
-      document.getElementById('login-error').textContent = 'Invalid token.'
-      document.getElementById('login-error').style.display = 'block'
-      return
-    }
-    const brands = await res.json()
-    document.getElementById('login').style.display = 'none'
-    document.getElementById('dashboard').style.display = 'block'
+    const res = await fetch(`${API}/brands/admin/low-confidence?token=${adminToken}`)
+    if (!res.ok) return
+    lowConfData = await res.json()
+    document.getElementById('badge-submissions').textContent =
+      lowConfData.length + (window._unknownCount || 0)
+    renderLowConf()
+  } catch (err) { console.warn('Failed to load low confidence', err) }
+}
 
-    const shopifyCount = brands.filter(b => b.is_shopify).length
-    const avgScore = brands.length
-      ? Math.round(brands.reduce((s, b) => s + (parseFloat(b.fashion_confidence_score) || 0), 0) / brands.length)
-      : 0
+function sortLowConf() {
+  lowConfAsc = !lowConfAsc
+  const arrow = document.getElementById('arrow-score')
+  arrow.textContent = lowConfAsc ? '↑' : '↓'
+  renderLowConf()
+}
 
-    document.getElementById('stat-pending').textContent = brands.length
-    document.getElementById('stat-shopify').textContent = shopifyCount
-    document.getElementById('stat-avg-score').textContent = brands.length ? avgScore + '%' : '—'
-    document.getElementById('queue-sub').textContent =
-      brands.length + ' brand' + (brands.length !== 1 ? 's' : '') + ' awaiting review'
-
-    const tbody = document.getElementById('brand-rows')
-    tbody.innerHTML = ''
-
-    if (brands.length === 0) {
-      document.getElementById('table-wrap').querySelector('table').style.display = 'none'
-      document.getElementById('empty-state').style.display = 'block'
-      return
-    }
-
-    for (const b of brands) {
-      const date = new Date(b.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      const score = b.fashion_confidence_score ? Math.round(b.fashion_confidence_score) : '?'
-      const isHighPriority = b.review_priority === 'high'
-      const langDisplay = b.language_detected || b.queue_language_detected || '—'
-      const tr = document.createElement('tr')
-      tr.id = 'row-' + b.id
-      const catChips = CATEGORIES.map(cat =>
-        `<span class="cat-chip" data-cat="${cat}" onclick="toggleCategory('${b.id}', '${cat}')">${cat}</span>`
-      ).join('')
-      tr.innerHTML = `
-        <td>
-          <div style="font-weight:500">
-            ${isHighPriority ? '<span class="priority-high">⚡ HIGH PRIORITY &nbsp;</span>' : ''}${b.name}
-          </div>
-          <div class="domain"><a href="https://${b.domain}" target="_blank" style="color:var(--gray)">${b.domain}</a></div>
-          ${b.user_dispute_note ? `<div class="dispute-note">💬 ${b.user_dispute_note}</div>` : ''}
-        </td>
-        <td><span class="${b.is_shopify ? 'shopify-yes' : 'shopify-no'}">${b.is_shopify ? '✓ Shopify' : '✗ Other'}</span></td>
-        <td><span class="score">${score}%</span></td>
-        <td><span class="lang-tag">${langDisplay}</span></td>
-        <td style="color:var(--gray);font-size:13px">${date}</td>
-        <td>
-          <span class="config-toggle" onclick="toggleConfigPanel('${b.id}')">⚙ Config</span>
-          <div class="config-panel" id="config-${b.id}">
-            <span class="config-label">ALLOWED CATEGORIES (leave blank for all)</span>
-            <div class="cat-grid">${catChips}</div>
-            <span class="config-label">SHOPIFY COLLECTION HANDLE (optional)</span>
-            <input class="config-input" id="col-${b.id}" placeholder="e.g. clothing, style, apparel" />
-            <span class="config-label">NOTES</span>
-            <input class="config-input" id="notes-${b.id}" placeholder="Why was this config set?" />
-          </div>
-          <div class="config-actions">
-            <button class="approve-btn" id="btn-${b.id}" onclick="approve('${b.id}', '${b.name}')">Approve</button>
-          </div>
-        </td>
-      `
-      tbody.appendChild(tr)
-    }
-  } catch (err) {
-    document.getElementById('login-error').textContent = 'Connection error. Is the backend running?'
-    document.getElementById('login-error').style.display = 'block'
+function renderLowConf() {
+  const sorted = [...lowConfData].sort((a, b) =>
+    lowConfAsc
+      ? a.fashion_confidence_score - b.fashion_confidence_score
+      : b.fashion_confidence_score - a.fashion_confidence_score
+  )
+  const tbody = document.getElementById('lowconf-rows')
+  tbody.innerHTML = ''
+  if (!sorted.length) {
+    document.getElementById('lowconf-empty').style.display = 'block'
+    return
+  }
+  document.getElementById('lowconf-empty').style.display = 'none'
+  for (const s of sorted) {
+    const date = new Date(s.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const score = Math.round(s.fashion_confidence_score)
+    const scoreClass = score >= 60 ? 'score-high' : score >= 40 ? 'score-mid' : 'score-low'
+    const tr = document.createElement('tr')
+    tr.id = 'lowconf-row-' + s.id
+    tr.innerHTML = `
+      <td>
+        <div style="font-weight:600">${s.name}</div>
+        <div class="domain-link"><a href="https://${s.domain}" target="_blank">${s.domain}</a></div>
+      </td>
+      <td><span class="${scoreClass}">${score}%</span></td>
+      <td style="color:var(--gray);font-size:12px;font-family:var(--mono)">${s.platform_detected || '—'}</td>
+      <td><span class="lang-tag">${s.language_detected || '—'}</span></td>
+      <td style="color:var(--gray);font-size:12px;font-family:var(--mono)">${date}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-approve" id="lc-approve-${s.id}" onclick="approveLowConf('${s.id}', '${s.name}')">APPROVE</button>
+        <button class="btn-block" id="lc-block-${s.id}" onclick="blockBrand('${s.id}', '${s.name}', 'lowconf')">BLOCK</button>
+      </td>
+    `
+    tbody.appendChild(tr)
   }
 }
 
-const CATEGORIES = ['tops','outerwear','bottoms','footwear','accessories','headwear','bags','jewelry','dresses','swimwear','misc']
-const brandConfigs = {}  // brandId -> { allowedCategories: [], collectionScope: '', notes: '' }
-
-function getConfig(brandId) {
-  if (!brandConfigs[brandId]) brandConfigs[brandId] = { allowedCategories: [], collectionScope: '', notes: '' }
-  return brandConfigs[brandId]
-}
-
-function toggleConfigPanel(brandId) {
-  const panel = document.getElementById('config-' + brandId)
-  panel.classList.toggle('open')
-}
-
-function toggleCategory(brandId, cat) {
-  const config = getConfig(brandId)
-  const idx = config.allowedCategories.indexOf(cat)
-  if (idx === -1) config.allowedCategories.push(cat)
-  else config.allowedCategories.splice(idx, 1)
-  // Update chip UI
-  document.querySelectorAll(`#config-${brandId} .cat-chip`).forEach(chip => {
-    chip.classList.toggle('selected', config.allowedCategories.includes(chip.dataset.cat))
-  })
-}
-
-async function approve(brandId, brandName) {
-  const config = getConfig(brandId)
-  const btn = document.getElementById('btn-' + brandId)
-  btn.disabled = true
-  btn.textContent = 'Approving...'
-
-  const body = {}
-  if (config.allowedCategories.length > 0) body.allowed_categories = config.allowedCategories
-  const colInput = document.getElementById('col-' + brandId)
-  if (colInput?.value.trim()) body.collection_scope = colInput.value.trim()
-  const notesInput = document.getElementById('notes-' + brandId)
-  if (notesInput?.value.trim()) body.notes = notesInput.value.trim()
-
+async function approveLowConf(brandId, brandName) {
+  const btn = document.getElementById('lc-approve-' + brandId)
+  const blockBtn = document.getElementById('lc-block-' + brandId)
+  btn.disabled = true; blockBtn.disabled = true; btn.textContent = '...'
   try {
     const res = await fetch(`${API}/brands/admin/approve/${brandId}?token=${adminToken}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
     })
     if (res.ok) {
-      document.getElementById('row-' + brandId).innerHTML =
-        `<td colspan="6" style="color:#4CAF50;padding:16px">✓ ${brandName} approved${config.allowedCategories.length ? ' (categories: ' + config.allowedCategories.join(', ') + ')' : ''}</td>`
-    } else {
-      btn.disabled = false
-      btn.textContent = 'Retry'
-    }
-  } catch {
-    btn.disabled = false
-    btn.textContent = 'Retry'
+      document.getElementById('lowconf-row-' + brandId).innerHTML =
+        `<td colspan="6" style="color:var(--green);padding:14px;font-family:var(--mono);font-size:12px">✓ ${brandName} approved</td>`
+    } else { btn.disabled = false; blockBtn.disabled = false; btn.textContent = 'APPROVE' }
+  } catch { btn.disabled = false; blockBtn.disabled = false; btn.textContent = 'APPROVE' }
+}
+
+async function blockBrand(brandId, brandName, source) {
+  const btn = document.getElementById((source === 'lowconf' ? 'lc-block-' : 'rv-block-') + brandId)
+  btn.disabled = true; btn.textContent = '...'
+  try {
+    const res = await fetch(`${API}/brands/admin/block/${brandId}?token=${adminToken}`, { method: 'POST' })
+    if (res.ok) {
+      const rowId = source === 'lowconf' ? 'lowconf-row-' : 'row-'
+      const cols = source === 'lowconf' ? 6 : 6
+      document.getElementById(rowId + brandId).innerHTML =
+        `<td colspan="${cols}" style="color:var(--red);padding:14px;font-family:var(--mono);font-size:12px">✗ ${brandName} blocked</td>`
+    } else { btn.disabled = false; btn.textContent = 'BLOCK' }
+  } catch { btn.disabled = false; btn.textContent = 'BLOCK' }
+}
+
+// ── Unknown Submissions ───────────────────────────────────────────────────────
+
+let unknownData = []
+let unknownCountAsc = false
+
+async function loadUnknownSubmissions() {
+  try {
+    const res = await fetch(`${API}/brands/admin/unknown-submissions?token=${adminToken}`)
+    if (!res.ok) return
+    // Sort alpha by domain
+    unknownData = (await res.json()).sort((a, b) => a.url.localeCompare(b.url))
+    window._unknownCount = unknownData.length
+    renderUnknown(unknownData)
+  } catch (err) { console.warn('Failed to load unknown submissions', err) }
+}
+
+function filterUnknown() {
+  const q = document.getElementById('unknown-search').value.toLowerCase().trim()
+  const filtered = q ? unknownData.filter(s => s.url.toLowerCase().includes(q)) : unknownData
+  renderUnknown(filtered)
+}
+
+function sortUnknown() {
+  unknownCountAsc = !unknownCountAsc
+  const arrow = document.getElementById('arrow-count')
+  arrow.textContent = unknownCountAsc ? '↑' : '↓'
+  const q = document.getElementById('unknown-search').value.toLowerCase().trim()
+  const source = q ? unknownData.filter(s => s.url.toLowerCase().includes(q)) : unknownData
+  const sorted = [...source].sort((a, b) =>
+    unknownCountAsc
+      ? a.submission_count - b.submission_count
+      : b.submission_count - a.submission_count
+  )
+  renderUnknown(sorted)
+}
+
+function renderUnknown(data) {
+  const tbody = document.getElementById('unknown-rows')
+  tbody.innerHTML = ''
+  if (!data.length) {
+    document.getElementById('unknown-empty').style.display = 'block'
+    return
+  }
+  document.getElementById('unknown-empty').style.display = 'none'
+  for (const s of data) {
+    const lastDate = new Date(s.last_submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const platformLabel = s.platform_detected === 'woocommerce' ? 'WooCommerce' : s.platform_detected === 'unknown' ? 'Unknown' : s.platform_detected
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td>
+        <div style="font-weight:600;font-family:var(--mono);font-size:12px">${s.url}</div>
+        <div class="domain-link"><a href="https://${s.url}" target="_blank">${s.url}</a></div>
+      </td>
+      <td style="color:var(--gray);font-size:12px;font-family:var(--mono)">${platformLabel}</td>
+      <td style="color:var(--gray);font-size:12px">${s.error_message || '—'}</td>
+      <td><span class="count-badge">${s.submission_count}</span></td>
+      <td style="color:var(--gray);font-size:12px;font-family:var(--mono)">${lastDate}</td>
+    `
+    tbody.appendChild(tr)
   }
 }
+
+// ── Taxonomy Health ───────────────────────────────────────────────────────────
 
 async function loadSkippedSummary() {
   try {
     const res = await fetch(`${API}/brands/admin/skipped-summary?token=${adminToken}`)
     if (!res.ok) return
     const data = await res.json()
-
     const LABELS = {
       no_category_match: 'NO CATEGORY MATCH',
       non_fashion_blocklist: 'BLOCKLISTED',
       no_price: 'NO PRICE',
-      category_not_allowed: 'CATEGORY FILTERED (SCOPED SCRAPE)',
+      category_not_allowed: 'CATEGORY FILTERED',
     }
-
     const statsEl = document.getElementById('skip-stats')
     if (!data.length) {
-      statsEl.innerHTML = '<div style="color:var(--gray);font-size:14px;padding:24px 0">No skipped products in the last 30 days</div>'
+      statsEl.innerHTML = '<div style="color:var(--gray);font-size:13px;padding:24px 0;font-family:var(--mono)">No skipped products in the last 30 days</div>'
       return
     }
-
     for (const row of data) {
       const label = LABELS[row.skip_reason] || row.skip_reason.toUpperCase().replace(/_/g, ' ')
       const div = document.createElement('div')
-      div.className = 'stat'
-      div.innerHTML = `<div class="stat-num">${row.count}</div><div class="stat-label">${label}</div>`
+      div.className = 'tax-stat'
+      div.innerHTML = `<div class="tax-stat-num">${row.count}</div><div class="tax-stat-label">${label}</div>`
       statsEl.appendChild(div)
     }
-
     const tablesEl = document.getElementById('skip-tables')
     for (const row of data) {
       if (!row.examples.length) continue
@@ -432,101 +824,34 @@ async function loadSkippedSummary() {
       const section = document.createElement('div')
       section.style.marginBottom = '40px'
       section.innerHTML = `
-        <p class="section-title" style="margin-top:32px">${label} — RECENT EXAMPLES</p>
-        <table>
-          <thead>
-            <tr>
-              <th>TITLE</th>
-              <th>PRODUCT TYPE</th>
-              <th>ATTEMPTED CATEGORY</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${row.examples.map(e => `
+        <div class="section-header" style="margin-top:32px">
+          <div class="section-label">${label} — RECENT EXAMPLES</div>
+        </div>
+        <div class="scroll-table" style="height:300px">
+          <table>
+            <thead>
               <tr>
-                <td>${e.title || '—'}</td>
-                <td style="color:var(--gray);font-size:12px">${e.product_type || '—'}</td>
-                <td style="color:var(--gray);font-size:12px">${e.attempted_category || '—'}</td>
+                <th>TITLE</th>
+                <th>PRODUCT TYPE</th>
+                <th>ATTEMPTED CATEGORY</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${row.examples.map(e => `
+                <tr>
+                  <td>${e.title || '—'}</td>
+                  <td style="color:var(--gray);font-size:12px;font-family:var(--mono)">${e.product_type || '—'}</td>
+                  <td style="color:var(--gray);font-size:12px;font-family:var(--mono)">${e.attempted_category || '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
       `
       tablesEl.appendChild(section)
     }
-  } catch (err) {
-    console.warn('Failed to load skipped summary', err)
-  }
+  } catch (err) { console.warn('Failed to load skipped summary', err) }
 }
-
-async function loadLowConfidenceSubmissions() {
-  try {
-    const res = await fetch(`${API}/brands/admin/low-confidence?token=${adminToken}`)
-    if (!res.ok) return
-    const data = await res.json()
-    const tbody = document.getElementById('lowconf-rows')
-    tbody.innerHTML = ''
-    if (!data.length) {
-      document.getElementById('lowconf-wrap').querySelector('table').style.display = 'none'
-      document.getElementById('lowconf-empty').style.display = 'block'
-      return
-    }
-    for (const s of data) {
-      const date = new Date(s.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      const score = Math.round(s.fashion_confidence_score)
-      const scoreColor = score >= 60 ? '#4CAF50' : score >= 40 ? '#ffaa00' : '#ff4444'
-      const tr = document.createElement('tr')
-      tr.innerHTML = `
-        <td>
-          <div style="font-weight:500">${s.name}</div>
-          <div class="domain"><a href="https://${s.domain}" target="_blank" style="color:var(--gray)">${s.domain}</a></div>
-        </td>
-        <td><span style="color:${scoreColor};font-weight:700">${score}%</span></td>
-        <td style="color:var(--gray);font-size:13px">${s.platform_detected || '—'}</td>
-        <td><span class="lang-tag">${s.language_detected || '—'}</span></td>
-        <td style="color:var(--gray);font-size:13px">${date}</td>
-      `
-      tbody.appendChild(tr)
-    }
-  } catch (err) {
-    console.warn('Failed to load low confidence submissions', err)
-  }
-}
-
-async function loadUnknownSubmissions() {
-  try {
-    const res = await fetch(`${API}/brands/admin/unknown-submissions?token=${adminToken}`)
-    if (!res.ok) return
-    const data = await res.json()
-    const tbody = document.getElementById('unknown-rows')
-    tbody.innerHTML = ''
-    if (!data.length) {
-      document.getElementById('unknown-wrap').querySelector('table').style.display = 'none'
-      document.getElementById('unknown-empty').style.display = 'block'
-      return
-    }
-    for (const s of data) {
-      const lastDate = new Date(s.last_submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      const platformLabel = s.platform_detected === 'woocommerce' ? 'WooCommerce (auth required)' : s.platform_detected === 'unknown' ? 'Unknown' : s.platform_detected
-      const reason = s.error_message || '—'
-      const tr = document.createElement('tr')
-      tr.innerHTML = `
-        <td>
-          <div style="font-weight:500">${s.url}</div>
-          <div class="domain"><a href="https://${s.url}" target="_blank" style="color:var(--gray)">${s.url}</a></div>
-        </td>
-        <td style="color:var(--gray);font-size:13px">${platformLabel}</td>
-        <td style="color:var(--gray);font-size:12px">${reason}</td>
-        <td><span class="score">${s.submission_count}</span></td>
-        <td style="color:var(--gray);font-size:13px">${lastDate}</td>
-      `
-      tbody.appendChild(tr)
-    }
-  } catch (err) {
-    console.warn('Failed to load unknown submissions', err)
-  }
-}
-
 </script>
 </body>
 </html>
