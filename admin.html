@@ -255,12 +255,46 @@
     .tax-stat-label { font-size: 10px; color: var(--gray); letter-spacing: 1px; margin-top: 4px; font-family: var(--mono); }
 
     .section-divider { margin: 40px 0 28px; border: none; border-top: 1px solid var(--border2); }
+
+    /* ── NAV SUBMIT BAR ── */
+    .nav-submit { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .nav-submit-wrap { display: flex; align-items: center; gap: 0; }
+    .nav-submit-input {
+      width: 280px; padding: 8px 14px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-right: none; color: var(--white);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none;
+      transition: border-color 0.15s;
+    }
+    .nav-submit-input:focus { border-color: var(--pink); }
+    .nav-submit-btn {
+      padding: 8px 16px; background: var(--pink); color: white;
+      border: none; font-family: var(--mono); font-size: 11px;
+      font-weight: 600; letter-spacing: 1px; cursor: pointer;
+      transition: opacity 0.2s; white-space: nowrap; width: auto;
+    }
+    .nav-submit-btn:hover { opacity: 0.85; }
+    .nav-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .nav-submit-result {
+      font-size: 11px; font-family: var(--mono); min-height: 16px;
+      text-align: right; transition: opacity 0.3s;
+    }
+    .result-ok { color: var(--green); }
+    .result-review { color: var(--amber); }
+    .result-err { color: var(--red); }
   </style>
 </head>
 <body>
 <nav>
-  <span class="logo">DRIP</span>
+  <a href="/" style="text-decoration:none"><span class="logo">DRIP</span></a>
   <div class="nav-right">
+    <div class="nav-submit" id="nav-submit" style="display:none">
+      <div class="nav-submit-wrap">
+        <input class="nav-submit-input" id="nav-url-input" type="text" placeholder="Enter a brand URL..." autocomplete="off" />
+        <button class="nav-submit-btn" id="nav-submit-btn" onclick="adminSubmit()">ADD</button>
+      </div>
+      <div class="nav-submit-result" id="nav-submit-result"></div>
+    </div>
     <span class="badge">ADMIN</span>
     <span class="signout" id="signout-btn" onclick="signOut()">Sign out</span>
   </div>
@@ -459,6 +493,7 @@ function signOut() {
   document.getElementById('login').style.display = 'block'
   document.getElementById('dashboard').style.display = 'none'
   document.getElementById('signout-btn').style.display = 'none'
+  document.getElementById('nav-submit').style.display = 'none'
   document.getElementById('token-input').value = ''
 }
 
@@ -519,6 +554,7 @@ async function loadDashboard() {
     document.getElementById('login').style.display = 'none'
     document.getElementById('dashboard').style.display = 'block'
     document.getElementById('signout-btn').style.display = 'inline'
+    document.getElementById('nav-submit').style.display = 'flex'
 
     const shopifyCount = brands.filter(b => b.is_shopify).length
     const avgScore = brands.length
@@ -852,6 +888,65 @@ async function loadSkippedSummary() {
     }
   } catch (err) { console.warn('Failed to load skipped summary', err) }
 }
+// ── Admin URL Submit ─────────────────────────────────────────────────────────
+
+async function adminSubmit() {
+  const input = document.getElementById('nav-url-input')
+  const btn = document.getElementById('nav-submit-btn')
+  const result = document.getElementById('nav-submit-result')
+  const raw = input.value.trim()
+  if (!raw) return
+
+  let url = raw
+  if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url
+
+  btn.disabled = true
+  btn.textContent = '...'
+  result.textContent = ''
+  result.className = 'nav-submit-result'
+
+  try {
+    const res = await fetch(`${API}/brands/admin/submit?token=${adminToken}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    })
+    const data = await res.json()
+    const status = data.status
+
+    const messages = {
+      scraping:     { text: '✓ Scraping now', cls: 'result-ok' },
+      review:       { text: '⏳ Queued for review', cls: 'result-review' },
+      manual_review:{ text: '⏳ Queued for review', cls: 'result-review' },
+      exists:       { text: '✓ Already in Drip', cls: 'result-ok' },
+      queued:       { text: '✓ Already queued', cls: 'result-ok' },
+      not_fashion:  { text: '✗ Not a fashion brand', cls: 'result-err' },
+      not_english:  { text: '⏳ Non-English — queued', cls: 'result-review' },
+      known_brand:  { text: `✗ Known brand (${data.response_category || ''})`, cls: 'result-err' },
+      hype_brand:   { text: '⏳ Hype brand — noted', cls: 'result-review' },
+    }
+    const m = messages[status] || { text: `Status: ${status}`, cls: 'result-review' }
+    result.textContent = m.text
+    result.classList.add(m.cls)
+
+    if (['scraping','review','manual_review'].includes(status)) {
+      input.value = ''
+      // Refresh review queue if relevant
+      if (['review','manual_review'].includes(status)) loadDashboard()
+    }
+  } catch (err) {
+    result.textContent = '✗ Error — check console'
+    result.classList.add('result-err')
+  } finally {
+    btn.disabled = false
+    btn.textContent = 'ADD'
+    setTimeout(() => { result.textContent = ''; result.className = 'nav-submit-result' }, 4000)
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement?.id === 'nav-url-input') adminSubmit()
+})
 </script>
 </body>
 </html>
