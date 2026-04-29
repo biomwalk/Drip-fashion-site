@@ -929,6 +929,17 @@ async function adminSubmit() {
       body: JSON.stringify({ url }),
     })
     const data = await res.json()
+
+    // Backend errors return { error: '...' } instead of { status: '...' }
+    if (data.error) {
+      result.textContent = '✗ ' + data.error
+      result.classList.add('result-err')
+      btn.disabled = false
+      btn.textContent = 'ADD BRAND'
+      setTimeout(() => { result.textContent = ''; result.className = 'nav-submit-result' }, 5000)
+      return
+    }
+
     const status = data.status
 
     const messages = {
