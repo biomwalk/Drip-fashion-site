@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drip — Data Insights</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --pink: #FF2D78;
+      --pink-dim: rgba(255,45,120,0.12);
+      --black: #0A0A0A;
+      --surface: #111111;
+      --surface2: #181818;
+      --white: #F0F0F0;
+      --gray: #666;
+      --gray2: #444;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --green: #2ECC71;
+      --amber: #F39C12;
+      --red: #E74C3C;
+      --mono: 'DM Mono', monospace;
+    }
+    body { background: var(--black); color: var(--white); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+    nav {
+      padding: 18px 40px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,10,0.95); backdrop-filter: blur(12px);
+    }
+    .logo { font-size: 18px; font-weight: 700; letter-spacing: 5px; color: var(--pink); font-family: var(--mono); text-decoration: none; }
+    .nav-right { display: flex; align-items: center; gap: 20px; }
+    .nav-link { font-size: 11px; color: var(--gray); letter-spacing: 1px; font-family: var(--mono); text-decoration: none; transition: color 0.15s; }
+    .nav-link:hover { color: var(--white); }
+    .signout { font-size: 11px; color: var(--gray); cursor: pointer; letter-spacing: 1px; text-decoration: underline; font-family: var(--mono); }
+    .signout:hover { color: var(--pink); }
+
+    #login { max-width: 420px; margin: 120px auto; padding: 0 24px; }
+    .login-card { background: var(--surface); border: 1px solid var(--border2); padding: 40px; }
+    .login-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; font-family: var(--mono); letter-spacing: 2px; }
+    .login-card .sub { color: var(--gray); font-size: 13px; margin-bottom: 32px; }
+    .field {
+      width: 100%; padding: 13px 16px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px;
+      margin-bottom: 12px; outline: none; transition: border-color 0.15s;
+    }
+    .field:focus { border-color: var(--pink); }
+    .btn-primary {
+      background: var(--pink); color: white; border: none;
+      padding: 13px 32px; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer; width: 100%;
+      letter-spacing: 1px; transition: opacity 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .error-msg { color: var(--red); font-size: 12px; margin-bottom: 12px; font-family: var(--mono); }
+
+    #dashboard { display: none; max-width: 1100px; margin: 0 auto; padding: 40px 24px 100px; }
+
+    .dash-header { margin-bottom: 32px; display: flex; align-items: flex-start; justify-content: space-between; }
+    .dash-header h1 { font-size: 26px; font-weight: 700; font-family: var(--mono); letter-spacing: 2px; }
+    .dash-header .sub { color: var(--gray); font-size: 13px; margin-top: 6px; }
+    .refresh-btn {
+      background: transparent; border: 1px solid var(--border2); color: var(--gray);
+      padding: 8px 18px; font-family: var(--mono); font-size: 10px; letter-spacing: 1px;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap; margin-top: 4px;
+    }
+    .refresh-btn:hover { border-color: var(--pink); color: var(--pink); }
+
+    .stats {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1px; background: var(--border2); margin-bottom: 36px; border: 1px solid var(--border2);
+    }
+    .stat { background: var(--surface); padding: 20px 28px; }
+    .stat-num { font-size: 28px; font-weight: 700; color: var(--pink); font-family: var(--mono); }
+    .stat-label { font-size: 10px; color: var(--gray); letter-spacing: 2px; margin-top: 4px; font-family: var(--mono); }
+
+    .chart-row { display: grid; gap: 1px; background: var(--border2); border: 1px solid var(--border2); margin-bottom: 28px; }
+    .chart-row.two-col { grid-template-columns: 1fr 1fr; }
+    .chart-row.one-col { grid-template-columns: 1fr; }
+    .chart-card { background: var(--surface); padding: 28px 28px 24px; }
+    .chart-label { font-size: 10px; letter-spacing: 3px; color: var(--pink); font-family: var(--mono); font-weight: 500; margin-bottom: 4px; }
+    .chart-desc { font-size: 12px; color: var(--gray); margin-bottom: 24px; }
+    canvas { display: block; }
+
+    .cat-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+    .cat-tab {
+      font-size: 10px; padding: 4px 10px; border: 1px solid var(--border2);
+      cursor: pointer; font-family: var(--mono); letter-spacing: 1px;
+      color: var(--gray); background: none; transition: all 0.15s;
+    }
+    .cat-tab:hover { color: var(--white); border-color: var(--gray2); }
+    .cat-tab.active { border-color: var(--pink); color: var(--pink); background: var(--pink-dim); }
+
+    @media (max-width: 700px) {
+      nav { padding: 16px 20px; }
+      #dashboard { padding: 24px 16px 80px; }
+      .chart-row.two-col { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .stat-num { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="/">DRIP</a>
+  <div class="nav-right">
+    <a class="nav-link" href="/admin.html">← ADMIN</a>
+    <span class="signout" id="signout-btn" style="display:none" onclick="signOut()">Sign out</span>
+  </div>
+</nav>
+
+<div id="login">
+  <div class="login-card">
+    <h1>DATA INSIGHTS</h1>
+    <p class="sub">Admin token required.</p>
+    <div id="login-error" class="error-msg" style="display:none"></div>
+    <input type="password" class="field" id="token-input" placeholder="Admin token" />
+    <button class="btn-primary" onclick="doLogin()">VIEW INSIGHTS</button>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="dash-header">
+    <div>
+      <h1>DATA INSIGHTS</h1>
+      <p class="sub" id="last-updated">Loading...</p>
+    </div>
+    <button class="refresh-btn" onclick="loadInsights()">↻ REFRESH</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="s-products">—</div><div class="stat-label">TOTAL PRODUCTS</div></div>
+    <div class="stat"><div class="stat-num" id="s-brands">—</div><div class="stat-label">LIVE BRANDS</div></div>
+    <div class="stat"><div class="stat-num" id="s-price">—</div><div class="stat-label">AVG PRICE (GBP)</div></div>
+    <div class="stat"><div class="stat-num" id="s-cats">—</div><div class="stat-label">CATEGORIES</div></div>
+  </div>
+
+  <div class="chart-row two-col">
+    <div class="chart-card">
+      <div class="chart-label">GENDER BREAKDOWN</div>
+      <div class="chart-desc">Products by assigned gender tag</div>
+      <canvas id="chart-gender" height="240"></canvas>
+      <div id="legend-gender" style="margin-top:20px;display:flex;flex-wrap:wrap;gap:12px"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-label">STYLE VIBES</div>
+      <div class="chart-desc">Brand-level style tag distribution across live brands</div>
+      <canvas id="chart-vibes" height="240"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-row one-col">
+    <div class="chart-card">
+      <div class="chart-label">BRAND GEOGRAPHY</div>
+      <div class="chart-desc">Cultural region assignment — brands may span multiple regions</div>
+      <canvas id="chart-geo" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-row one-col">
+    <div class="chart-card">
+      <div class="chart-label">PRICE DISTRIBUTION</div>
+      <div class="chart-desc">Product count by price bucket (GBP) — filter by category</div>
+      <div class="cat-tabs" id="cat-tabs"></div>
+      <canvas id="chart-prices" height="220"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://drip-production-a900.up.railway.app/api/v1'
+let adminToken = ''
+let insightsData = null
+let activeCategory = 'all'
+
+const COLORS = [
+  '#FF2D78','#3498DB','#2ECC71','#F39C12','#9B59B6',
+  '#1ABC9C','#E74C3C','#E67E22','#27AE60','#2980B9',
+  '#8E44AD','#16A085','#D35400','#C0392B','#7F8C8D',
+  '#F1C40F','#BDC3C7','#2C3E50','#95A5A6','#ECF0F1',
+]
+const PINK = '#FF2D78'
+function color(i) { return COLORS[i % COLORS.length] }
+
+const GEO_LABELS = {
+  american:'Americas', west_european:'W. Europe', east_asian:'East Asia',
+  southeast_asian:'SE Asia', south_asian:'S. Asia', middle_eastern:'Mid. East',
+  african:'Africa', latin_american:'Lat. Am.', caribbean:'Caribbean',
+  east_european:'E. Europe', oceanian:'Oceania',
+}
+const BUCKETS = ['0-25','25-50','50-100','100-200','200-500','500+']
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('drip_admin_token')
+  if (saved) {
+    adminToken = saved
+    document.getElementById('token-input').value = saved
+    showDashboard()
+    loadInsights()
+  }
+  document.getElementById('token-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin()
+  })
+})
+
+function doLogin() {
+  const val = document.getElementById('token-input').value.trim()
+  if (!val) return
+  adminToken = val
+  localStorage.setItem('drip_admin_token', val)
+  showDashboard()
+  loadInsights()
+}
+
+function showDashboard() {
+  document.getElementById('login').style.display = 'none'
+  document.getElementById('dashboard').style.display = 'block'
+  document.getElementById('signout-btn').style.display = 'inline'
+}
+
+function signOut() {
+  localStorage.removeItem('drip_admin_token')
+  adminToken = ''
+  insightsData = null
+  document.getElementById('login').style.display = 'block'
+  document.getElementById('dashboard').style.display = 'none'
+  document.getElementById('signout-btn').style.display = 'none'
+  document.getElementById('token-input').value = ''
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+async function loadInsights() {
+  document.getElementById('last-updated').textContent = 'Loading...'
+  try {
+    const res = await fetch(`${API}/brands/admin/data-insights?token=${adminToken}`)
+    if (res.status === 401) {
+      document.getElementById('login-error').textContent = 'Invalid token.'
+      document.getElementById('login-error').style.display = 'block'
+      signOut()
+      return
+    }
+    insightsData = await res.json()
+    renderAll()
+  } catch (err) {
+    document.getElementById('last-updated').textContent = 'Failed to load — check console'
+    console.error(err)
+  }
+}
+
+function renderAll() {
+  const d = insightsData
+  if (!d) return
+  document.getElementById('s-products').textContent = d.stats.total_products.toLocaleString()
+  document.getElementById('s-brands').textContent = d.stats.total_brands.toLocaleString()
+  document.getElementById('s-price').textContent = '£' + d.stats.avg_price.toFixed(0)
+  document.getElementById('s-cats').textContent = d.stats.total_categories
+  document.getElementById('last-updated').textContent =
+    'Last updated ' + new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })
+  drawGenderDonut(d.gender)
+  drawVibesBar(d.vibes)
+  drawGeoBar(d.geography)
+  buildCatTabs(d.prices)
+  drawPriceHistogram(d.prices, activeCategory)
+}
+
+// ── Canvas helpers ────────────────────────────────────────────────────────────
+
+function getCanvas(id) {
+  const canvas = document.getElementById(id)
+  const w = canvas.parentElement.clientWidth - 56
+  canvas.width = w > 0 ? w : 400
+  const ctx = canvas.getContext('2d')
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  return { canvas, ctx }
+}
+
+// ── Gender Donut ──────────────────────────────────────────────────────────────
+
+function drawGenderDonut(data) {
+  const { canvas, ctx } = getCanvas('chart-gender')
+  if (!data.length) return
+  const LABELS = { men:'Men', women:'Women', unisex:'Unisex', nongendered:'Untagged' }
+  const total = data.reduce((s, r) => s + r.count, 0)
+  const cx = canvas.width / 2
+  const cy = canvas.height / 2
+  const R = Math.min(cx, cy) - 16
+  const r = R * 0.55
+  let angle = -Math.PI / 2
+
+  data.forEach((row, i) => {
+    const slice = (row.count / total) * 2 * Math.PI
+    ctx.beginPath()
+    ctx.moveTo(cx, cy)
+    ctx.arc(cx, cy, R, angle, angle + slice)
+    ctx.closePath()
+    ctx.fillStyle = color(i)
+    ctx.fill()
+    angle += slice
+  })
+
+  // Hole
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI)
+  ctx.fillStyle = '#111111'
+  ctx.fill()
+
+  // Centre text
+  ctx.fillStyle = '#F0F0F0'
+  ctx.font = `700 22px 'DM Mono', monospace`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(total.toLocaleString(), cx, cy - 8)
+  ctx.font = `400 9px 'DM Mono', monospace`
+  ctx.fillStyle = '#666'
+  ctx.fillText('PRODUCTS', cx, cy + 10)
+
+  // Legend
+  const legendEl = document.getElementById('legend-gender')
+  legendEl.innerHTML = ''
+  data.forEach((row, i) => {
+    const pct = ((row.count / total) * 100).toFixed(1)
+    const item = document.createElement('div')
+    item.style.cssText = 'display:flex;align-items:center;gap:6px'
+    item.innerHTML = `
+      <span style="width:10px;height:10px;border-radius:50%;background:${color(i)};flex-shrink:0"></span>
+      <span style="font-family:'DM Mono',monospace;color:#888;font-size:11px">${LABELS[row.gender] || row.gender} — ${pct}%</span>
+    `
+    legendEl.appendChild(item)
+  })
+}
+
+// ── Vibes Horizontal Bar ──────────────────────────────────────────────────────
+
+function drawVibesBar(data) {
+  const top = data.slice(0, 14)
+  const barH = 15
+  const gap = 7
+  const labelW = 120
+  const totalH = top.length * (barH + gap) + 8
+
+  const canvas = document.getElementById('chart-vibes')
+  canvas.width = canvas.parentElement.clientWidth - 56
+  canvas.height = totalH
+  const ctx = canvas.getContext('2d')
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  if (!top.length) return
+  const maxVal = Math.max(...top.map(r => r.count))
+  const barAreaW = canvas.width - labelW - 40
+
+  top.forEach((row, i) => {
+    const y = i * (barH + gap)
+    const barW = Math.max(2, (row.count / maxVal) * barAreaW)
+
+    ctx.fillStyle = color(i)
+    ctx.globalAlpha = 0.85
+    ctx.fillRect(labelW, y, barW, barH)
+    ctx.globalAlpha = 1
+
+    ctx.fillStyle = '#777'
+    ctx.font = `400 10px 'DM Mono', monospace`
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(row.vibe.replace(/_/g, ' ').toUpperCase(), labelW - 8, y + barH / 2)
+
+    ctx.fillStyle = '#F0F0F0'
+    ctx.font = `500 10px 'DM Mono', monospace`
+    ctx.textAlign = 'left'
+    ctx.fillText(row.count, labelW + barW + 6, y + barH / 2)
+  })
+}
+
+// ── Geography Bar ─────────────────────────────────────────────────────────────
+
+function drawGeoBar(data) {
+  const barH = 26
+  const gap = 8
+  const labelW = 90
+  const totalH = data.length * (barH + gap) + 8
+
+  const canvas = document.getElementById('chart-geo')
+  canvas.width = canvas.parentElement.clientWidth - 56
+  canvas.height = Math.max(200, totalH)
+  const ctx = canvas.getContext('2d')
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  if (!data.length) return
+  const maxVal = Math.max(...data.map(r => r.count))
+  const barAreaW = canvas.width - labelW - 50
+
+  data.forEach((row, i) => {
+    const y = i * (barH + gap)
+    const barW = Math.max(2, (row.count / maxVal) * barAreaW)
+
+    ctx.fillStyle = 'rgba(255,255,255,0.04)'
+    ctx.fillRect(labelW, y, barAreaW, barH)
+
+    ctx.fillStyle = color(i)
+    ctx.globalAlpha = 0.9
+    ctx.fillRect(labelW, y, barW, barH)
+    ctx.globalAlpha = 1
+
+    ctx.fillStyle = '#777'
+    ctx.font = `400 10px 'DM Mono', monospace`
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillText((GEO_LABELS[row.region] || row.region).toUpperCase(), labelW - 8, y + barH / 2)
+
+    ctx.fillStyle = '#F0F0F0'
+    ctx.font = `600 11px 'DM Mono', monospace`
+    ctx.textAlign = 'left'
+    ctx.fillText(row.count, labelW + barW + 8, y + barH / 2)
+  })
+}
+
+// ── Price Histogram ───────────────────────────────────────────────────────────
+
+function buildCatTabs(pricesData) {
+  const cats = ['all', ...Array.from(new Set(pricesData.map(r => r.category))).sort()]
+  const el = document.getElementById('cat-tabs')
+  el.innerHTML = ''
+  cats.forEach(cat => {
+    const btn = document.createElement('button')
+    btn.className = 'cat-tab' + (cat === activeCategory ? ' active' : '')
+    btn.textContent = cat === 'all' ? 'ALL' : cat.toUpperCase()
+    btn.onclick = () => {
+      activeCategory = cat
+      document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      drawPriceHistogram(pricesData, cat)
+    }
+    el.appendChild(btn)
+  })
+}
+
+function drawPriceHistogram(pricesData, category) {
+  const { canvas, ctx } = getCanvas('chart-prices')
+  if (!pricesData.length) return
+
+  const bucketTotals = {}
+  BUCKETS.forEach(b => { bucketTotals[b] = 0 })
+  pricesData.forEach(row => {
+    if (category === 'all' || row.category === category) {
+      if (bucketTotals[row.bucket] !== undefined) bucketTotals[row.bucket] += row.count
+    }
+  })
+
+  const values = BUCKETS.map(b => bucketTotals[b])
+  const maxVal = Math.max(...values, 1)
+  const padL = 8, padR = 16, padTop = 16, padBot = 36
+  const chartW = canvas.width - padL - padR
+  const chartH = canvas.height - padTop - padBot
+  const slotW = Math.floor(chartW / BUCKETS.length)
+  const barW = Math.max(8, slotW - 12)
+
+  // Gridlines
+  for (let g = 1; g <= 4; g++) {
+    const y = padTop + chartH - (g / 4) * chartH
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(padL, y)
+    ctx.lineTo(canvas.width - padR, y)
+    ctx.stroke()
+    ctx.fillStyle = '#444'
+    ctx.font = `400 9px 'DM Mono', monospace`
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(Math.round((g / 4) * maxVal).toLocaleString(), padL, y)
+  }
+
+  // Bars
+  values.forEach((val, i) => {
+    const x = padL + i * slotW + (slotW - barW) / 2
+    const bH = val === 0 ? 0 : Math.max(2, (val / maxVal) * chartH)
+    const y = padTop + chartH - bH
+
+    const grad = ctx.createLinearGradient(0, y, 0, y + bH)
+    grad.addColorStop(0, PINK)
+    grad.addColorStop(1, 'rgba(255,45,120,0.25)')
+    ctx.fillStyle = grad
+    ctx.fillRect(x, y, barW, bH)
+
+    if (val > 0) {
+      ctx.fillStyle = '#F0F0F0'
+      ctx.font = `500 9px 'DM Mono', monospace`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'bottom'
+      ctx.fillText(val.toLocaleString(), x + barW / 2, y - 3)
+    }
+
+    ctx.fillStyle = '#666'
+    ctx.font = `400 10px 'DM Mono', monospace`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.fillText('£' + BUCKETS[i], x + barW / 2, padTop + chartH + 8)
+  })
+}
+
+// ── Resize ────────────────────────────────────────────────────────────────────
+
+let resizeTimer
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => { if (insightsData) renderAll() }, 150)
+})
+</script>
+</body>
+</html>

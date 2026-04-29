@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drip — Classifier Analytics</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --pink: #FF2D78;
+      --pink-dim: rgba(255,45,120,0.12);
+      --black: #0A0A0A;
+      --surface: #111111;
+      --surface2: #181818;
+      --white: #F0F0F0;
+      --gray: #666;
+      --gray2: #444;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --green: #2ECC71;
+      --amber: #F39C12;
+      --red: #E74C3C;
+      --blue: #3498DB;
+      --purple: #9B59B6;
+      --teal: #1ABC9C;
+      --mono: 'DM Mono', monospace;
+    }
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      padding: 18px 40px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,10,0.95);
+      backdrop-filter: blur(12px);
+    }
+    .logo { font-size: 18px; font-weight: 700; letter-spacing: 5px; color: var(--pink); font-family: var(--mono); text-decoration: none; }
+    .nav-right { display: flex; align-items: center; gap: 20px; }
+    .nav-link { font-size: 11px; color: var(--gray); letter-spacing: 2px; font-family: var(--mono); text-decoration: none; }
+    .nav-link:hover { color: var(--pink); }
+    .signout { font-size: 11px; color: var(--gray); cursor: pointer; letter-spacing: 1px; text-decoration: underline; display: none; }
+    .signout:hover { color: var(--pink); }
+
+    /* ── LOGIN ── */
+    #login { max-width: 420px; margin: 120px auto; padding: 0 24px; }
+    .login-card { background: var(--surface); border: 1px solid var(--border2); padding: 40px; }
+    .login-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; font-family: var(--mono); letter-spacing: 2px; }
+    .login-card .sub { color: var(--gray); font-size: 13px; margin-bottom: 32px; }
+    .field {
+      width: 100%; padding: 13px 16px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px;
+      margin-bottom: 12px; outline: none; transition: border-color 0.15s;
+    }
+    .field:focus { border-color: var(--pink); }
+    .btn-primary {
+      background: var(--pink); color: white; border: none;
+      padding: 13px 32px; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer; width: 100%;
+      letter-spacing: 1px; transition: opacity 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .error-msg { color: var(--red); font-size: 12px; margin-bottom: 12px; font-family: var(--mono); }
+
+    /* ── DASHBOARD ── */
+    #dashboard { display: none; max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    .dash-header { margin-bottom: 32px; }
+    .dash-header h1 { font-size: 26px; font-weight: 700; font-family: var(--mono); letter-spacing: 2px; }
+    .dash-header .sub { color: var(--gray); font-size: 13px; margin-top: 6px; }
+    .last-updated { font-size: 10px; color: var(--gray2); font-family: var(--mono); margin-top: 4px; }
+
+    /* ── SUMMARY STATS ── */
+    .stats {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      gap: 1px; background: var(--border2); margin-bottom: 48px;
+      border: 1px solid var(--border2);
+    }
+    .stat { background: var(--surface); padding: 20px 24px; }
+    .stat-num { font-size: 26px; font-weight: 700; color: var(--pink); font-family: var(--mono); }
+    .stat-label { font-size: 9px; color: var(--gray); letter-spacing: 2px; margin-top: 4px; font-family: var(--mono); }
+    .stat-sub { font-size: 10px; color: var(--gray2); font-family: var(--mono); margin-top: 2px; }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 10px; letter-spacing: 3px; color: var(--pink);
+      font-family: var(--mono); font-weight: 500;
+    }
+    .section-desc { font-size: 12px; color: var(--gray); margin-top: 3px; }
+    .section-header { margin-bottom: 16px; }
+
+    /* ── GRID LAYOUT ── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    .charts-grid.full { grid-template-columns: 1fr; }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      padding: 24px;
+    }
+
+    /* ── BAR CHART ── */
+    .bar-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .bar-row { display: flex; flex-direction: column; gap: 4px; }
+    .bar-meta { display: flex; justify-content: space-between; align-items: baseline; }
+    .bar-label {
+      font-size: 11px; font-family: var(--mono); color: var(--white);
+      letter-spacing: 0.5px; text-transform: uppercase;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 200px;
+    }
+    .bar-count { font-size: 11px; font-family: var(--mono); color: var(--gray); }
+    .bar-pct { font-size: 10px; font-family: var(--mono); color: var(--pink); margin-left: 6px; }
+    .bar-track { height: 4px; background: var(--border2); border-radius: 0; }
+    .bar-fill {
+      height: 100%; background: var(--pink);
+      border-radius: 0; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── DONUT CHART ── */
+    .donut-wrap {
+      display: flex; align-items: center; gap: 32px; margin-top: 8px;
+    }
+    .donut-svg { flex-shrink: 0; }
+    .donut-legend { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .legend-label { font-size: 11px; font-family: var(--mono); color: var(--white); flex: 1; text-transform: uppercase; letter-spacing: 0.5px; }
+    .legend-pct { font-size: 11px; font-family: var(--mono); color: var(--pink); }
+
+    /* ── LOADING SKELETON ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--surface) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 2px;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    .skeleton-bar { height: 4px; width: 100%; margin-top: 8px; }
+    .skeleton-text { height: 12px; width: 60%; margin-bottom: 10px; }
+
+    /* ── REFRESH BTN ── */
+    .refresh-btn {
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--gray); font-family: var(--mono); font-size: 10px;
+      letter-spacing: 2px; padding: 6px 14px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .refresh-btn:hover { border-color: var(--pink); color: var(--pink); }
+    .refresh-btn.spinning { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── COVERAGE INDICATOR ── */
+    .coverage-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .coverage-row:last-child { border-bottom: none; }
+    .coverage-name { font-size: 12px; font-family: var(--mono); color: var(--white); }
+    .coverage-bar-wrap { flex: 1; margin: 0 16px; }
+    .coverage-pct-label { font-size: 11px; font-family: var(--mono); min-width: 40px; text-align: right; }
+    .coverage-good { color: var(--green); }
+    .coverage-mid { color: var(--amber); }
+    .coverage-bad { color: var(--red); }
+
+    /* ── DIVIDER ── */
+    .section-divider { margin: 40px 0 32px; border: none; border-top: 1px solid var(--border2); }
+
+    /* ── EMPTY STATE ── */
+    .empty { color: var(--gray); font-size: 12px; padding: 32px 0; text-align: center; font-family: var(--mono); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">DRIP</a>
+  <div class="nav-right">
+    <a href="/admin.html" class="nav-link">← ADMIN</a>
+    <span class="signout" id="signout-btn" onclick="signOut()">Sign out</span>
+  </div>
+</nav>
+
+<div id="login">
+  <div class="login-card">
+    <h1>ADMIN ACCESS</h1>
+    <p class="sub">Enter your admin token to continue.</p>
+    <div id="login-error" class="error-msg" style="display:none"></div>
+    <input type="password" class="field" id="token-input" placeholder="Admin token" />
+    <button class="btn-primary" onclick="doLogin()">SIGN IN</button>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="dash-header">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <h1>CLASSIFIER ANALYTICS</h1>
+        <p class="sub">Live distribution of taxonomy outputs across the Drip brand catalog</p>
+        <p class="last-updated" id="last-updated">—</p>
+      </div>
+      <button class="refresh-btn" onclick="loadAll()" id="refresh-btn">↻ REFRESH</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY STATS -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num" id="stat-live">—</div>
+      <div class="stat-label">LIVE BRANDS</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="stat-gender-cov">—</div>
+      <div class="stat-label">GENDER CLASSIFIED</div>
+      <div class="stat-sub" id="stat-gender-pct">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="stat-price-cov">—</div>
+      <div class="stat-label">PRICE CLASSIFIED</div>
+      <div class="stat-sub" id="stat-price-pct">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="stat-region-cov">—</div>
+      <div class="stat-label">REGION CLASSIFIED</div>
+      <div class="stat-sub" id="stat-region-pct">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="stat-submissions">—</div>
+      <div class="stat-label">TOTAL SUBMISSIONS</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Gender + Platform -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="section-header">
+        <div class="section-label">GENDER SPLIT</div>
+        <div class="section-desc">% of live brands by target gender</div>
+      </div>
+      <div id="gender-chart"><div class="empty">Loading...</div></div>
+    </div>
+    <div class="chart-card">
+      <div class="section-header">
+        <div class="section-label">PLATFORM SPLIT</div>
+        <div class="section-desc">Shopify vs WooCommerce vs other</div>
+      </div>
+      <div id="platform-chart"><div class="empty">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Price Profile + Cultural Region -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="section-header">
+        <div class="section-label">PRICE PROFILE</div>
+        <div class="section-desc">Classifier-assigned price tier across live brands</div>
+      </div>
+      <div id="price-chart"><div class="empty">Loading...</div></div>
+    </div>
+    <div class="chart-card">
+      <div class="section-header">
+        <div class="section-label">CULTURAL REGION</div>
+        <div class="section-desc">Geographic / cultural origin tag distribution</div>
+      </div>
+      <div id="region-chart"><div class="empty">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Submission Status -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="section-header">
+        <div class="section-label">SUBMISSION STATUS</div>
+        <div class="section-desc">Current state of all entries in the brand_submissions queue</div>
+      </div>
+      <div id="submission-chart"><div class="empty">Loading...</div></div>
+    </div>
+    <div class="chart-card">
+      <div class="section-header">
+        <div class="section-label">CATEGORY COVERAGE</div>
+        <div class="section-desc">Taxonomy category distribution across live brands</div>
+      </div>
+      <div id="category-chart"><div class="empty">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- ROW 4: Style Vibes (full width) -->
+  <div class="charts-grid full">
+    <div class="chart-card">
+      <div class="section-header">
+        <div class="section-label">STYLE VIBES DISTRIBUTION</div>
+        <div class="section-desc">Top style_tags assigned by the classifier across live brands (brands can have multiple tags)</div>
+      </div>
+      <div id="vibes-chart"><div class="empty">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- CLASSIFIER COVERAGE SUMMARY -->
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="section-header">
+      <div class="section-label">CLASSIFIER COVERAGE</div>
+      <div class="section-desc">% of live brands with each field populated — gaps = classifier bugs or missing data</div>
+    </div>
+    <div id="coverage-list"><div class="empty">Loading...</div></div>
+  </div>
+
+</div>
+
+<script>
+const API = 'https://drip-production-a900.up.railway.app/api/v1'
+let adminToken = ''
+
+// ── Color palettes ────────────────────────────────────────────────────────────
+
+const PALETTE = {
+  gender: { male: '#3498DB', female: '#FF2D78', unisex: '#9B59B6', unclassified: '#444' },
+  platform: { shopify: '#2ECC71', woocommerce: '#9B59B6', unknown: '#444', other: '#F39C12' },
+  price: {
+    budget: '#2ECC71', affordable: '#1ABC9C', mid: '#3498DB',
+    premium: '#9B59B6', luxury: '#FF2D78', unclassified: '#444'
+  },
+  status: {
+    completed: '#2ECC71', live: '#2ECC71', pending: '#F39C12',
+    processing: '#3498DB', failed: '#E74C3C', manual_review: '#9B59B6',
+    dead: '#444', blocked: '#E74C3C'
+  },
+}
+
+const SEQUENTIAL = [
+  '#FF2D78','#FF6B9D','#FF2D78aa','#3498DB','#9B59B6','#1ABC9C',
+  '#F39C12','#2ECC71','#E74C3C','#5DADE2','#A569BD','#48C9B0',
+  '#F5B041','#52BE80','#EC7063','#7FB3D3','#C39BD3','#76D7C4',
+  '#F8C471','#82E0AA',
+]
+
+function colorFor(palette, label) {
+  if (!palette) return null
+  const key = label.toLowerCase().replace(/[^a-z0-9]/g, '')
+  for (const [k, v] of Object.entries(palette)) {
+    if (key.includes(k) || k.includes(key)) return v
+  }
+  return null
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('drip_admin_token')
+  if (saved) {
+    adminToken = saved
+    document.getElementById('token-input').value = saved
+    showDashboard()
+    loadAll()
+  }
+})
+
+function doLogin() {
+  const val = document.getElementById('token-input').value.trim()
+  if (!val) return
+  adminToken = val
+  localStorage.setItem('drip_admin_token', val)
+  showDashboard()
+  loadAll()
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement?.id === 'token-input') doLogin()
+})
+
+function showDashboard() {
+  document.getElementById('login').style.display = 'none'
+  document.getElementById('dashboard').style.display = 'block'
+  document.getElementById('signout-btn').style.display = 'inline'
+}
+
+function signOut() {
+  localStorage.removeItem('drip_admin_token')
+  location.reload()
+}
+
+// ── Load all data ─────────────────────────────────────────────────────────────
+
+async function loadAll() {
+  const btn = document.getElementById('refresh-btn')
+  btn.classList.add('spinning')
+  btn.textContent = '↻ LOADING'
+
+  try {
+    const res = await fetch(`${API}/brands/admin/classifier-stats?token=${adminToken}`)
+    if (res.status === 401) {
+      document.getElementById('login-error').style.display = 'block'
+      document.getElementById('login-error').textContent = 'Invalid token'
+      showLogin()
+      return
+    }
+    if (!res.ok) throw new Error('API error')
+    const data = await res.json()
+    render(data)
+    document.getElementById('last-updated').textContent =
+      'Last updated: ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  } catch (err) {
+    console.error('Failed to load classifier stats', err)
+    setAllEmpty('Failed to load data — check console')
+  } finally {
+    btn.classList.remove('spinning')
+    btn.textContent = '↻ REFRESH'
+  }
+}
+
+function showLogin() {
+  document.getElementById('dashboard').style.display = 'none'
+  document.getElementById('login').style.display = 'block'
+}
+
+function setAllEmpty(msg) {
+  const ids = ['gender-chart','platform-chart','price-chart','region-chart','submission-chart','category-chart','vibes-chart','coverage-list']
+  ids.forEach(id => {
+    document.getElementById(id).innerHTML = `<div class="empty">${msg}</div>`
+  })
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+function render(data) {
+  const { summary, gender, vibes, price, region, platform, submissions, category } = data
+  const live = summary.live_brands
+
+  // Summary stats
+  document.getElementById('stat-live').textContent = fmt(live)
+  document.getElementById('stat-gender-cov').textContent = fmt(summary.classified_gender)
+  document.getElementById('stat-gender-pct').textContent = pct(summary.classified_gender, live) + '% coverage'
+  document.getElementById('stat-price-cov').textContent = fmt(summary.classified_price)
+  document.getElementById('stat-price-pct').textContent = pct(summary.classified_price, live) + '% coverage'
+  document.getElementById('stat-region-cov').textContent = fmt(summary.classified_region)
+  document.getElementById('stat-region-pct').textContent = pct(summary.classified_region, live) + '% coverage'
+  document.getElementById('stat-submissions').textContent = fmt(summary.total_submissions)
+
+  // Charts
+  renderDonut('gender-chart', gender, PALETTE.gender)
+  renderDonut('platform-chart', platform, PALETTE.platform)
+  renderBars('price-chart', price, PALETTE.price)
+  renderBars('region-chart', region, null)
+  renderBars('submission-chart', submissions, PALETTE.status)
+  renderBars('category-chart', category, null)
+  renderVibes('vibes-chart', vibes)
+
+  // Coverage
+  renderCoverage('coverage-list', [
+    { name: 'Gender', classified: summary.classified_gender, total: live },
+    { name: 'Price Profile', classified: summary.classified_price, total: live },
+    { name: 'Cultural Region', classified: summary.classified_region, total: live },
+  ])
+}
+
+// ── Bar chart renderer ────────────────────────────────────────────────────────
+
+function renderBars(elId, rows, palette) {
+  const el = document.getElementById(elId)
+  if (!rows || !rows.length) { el.innerHTML = '<div class="empty">No data</div>'; return }
+  const total = rows.reduce((s, r) => s + r.count, 0)
+  const max = rows[0].count
+
+  el.innerHTML = ''
+  const list = document.createElement('div')
+  list.className = 'bar-list'
+
+  rows.forEach((row, i) => {
+    const fillPct = max > 0 ? (row.count / max) * 100 : 0
+    const sharePct = total > 0 ? ((row.count / total) * 100).toFixed(1) : '0'
+    const color = (palette && colorFor(palette, row.label)) || SEQUENTIAL[i % SEQUENTIAL.length]
+
+    const div = document.createElement('div')
+    div.className = 'bar-row'
+    div.innerHTML = `
+      <div class="bar-meta">
+        <span class="bar-label" title="${row.label}">${row.label}</span>
+        <span class="bar-count">${fmt(row.count)}<span class="bar-pct">${sharePct}%</span></span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${fillPct}%;background:${color}"></div>
+      </div>
+    `
+    list.appendChild(div)
+  })
+  el.appendChild(list)
+}
+
+// ── Donut chart renderer ──────────────────────────────────────────────────────
+
+function renderDonut(elId, rows, palette) {
+  const el = document.getElementById(elId)
+  if (!rows || !rows.length) { el.innerHTML = '<div class="empty">No data</div>'; return }
+
+  const total = rows.reduce((s, r) => s + r.count, 0)
+  const colors = rows.map((r, i) => (palette && colorFor(palette, r.label)) || SEQUENTIAL[i % SEQUENTIAL.length])
+
+  // Build SVG donut
+  const size = 120
+  const cx = size / 2
+  const cy = size / 2
+  const r = 46
+  const innerR = 30
+
+  let angle = -Math.PI / 2
+  const slices = rows.map((row, i) => {
+    const sweep = (row.count / total) * 2 * Math.PI
+    const x1 = cx + r * Math.cos(angle)
+    const y1 = cy + r * Math.sin(angle)
+    angle += sweep
+    const x2 = cx + r * Math.cos(angle)
+    const y2 = cy + r * Math.sin(angle)
+    const xi1 = cx + innerR * Math.cos(angle)
+    const yi1 = cy + innerR * Math.sin(angle)
+    const xi2 = cx + innerR * Math.cos(angle - sweep)
+    const yi2 = cy + innerR * Math.sin(angle - sweep)
+    const largeArc = sweep > Math.PI ? 1 : 0
+    return { x1, y1, x2, y2, xi1, yi1, xi2, yi2, largeArc, color: colors[i], sweep }
+  })
+
+  const paths = slices.map(s => {
+    if (s.sweep < 0.001) return ''
+    return `<path d="M ${s.x1} ${s.y1} A ${r} ${r} 0 ${s.largeArc} 1 ${s.x2} ${s.y2} L ${s.xi1} ${s.yi1} A ${innerR} ${innerR} 0 ${s.largeArc} 0 ${s.xi2} ${s.yi2} Z" fill="${s.color}" opacity="0.9"/>`
+  }).join('')
+
+  const svg = `
+    <svg class="donut-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+      ${paths}
+      <text x="${cx}" y="${cy - 4}" text-anchor="middle" fill="#F0F0F0" font-size="14" font-family="DM Mono" font-weight="700">${fmt(total)}</text>
+      <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="#666" font-size="7" font-family="DM Mono" letter-spacing="1">TOTAL</text>
+    </svg>
+  `
+
+  const legend = rows.map((row, i) => {
+    const sharePct = ((row.count / total) * 100).toFixed(1)
+    return `
+      <div class="legend-row">
+        <div class="legend-dot" style="background:${colors[i]}"></div>
+        <span class="legend-label" title="${row.label}">${row.label}</span>
+        <span class="legend-pct">${sharePct}%</span>
+      </div>
+    `
+  }).join('')
+
+  el.innerHTML = `
+    <div class="donut-wrap">
+      ${svg}
+      <div class="donut-legend">${legend}</div>
+    </div>
+  `
+}
+
+// ── Vibes renderer (horizontal grid of bars) ──────────────────────────────────
+
+function renderVibes(elId, rows) {
+  const el = document.getElementById(elId)
+  if (!rows || !rows.length) { el.innerHTML = '<div class="empty">No data</div>'; return }
+
+  const total = rows.reduce((s, r) => s + r.count, 0)
+  const max = rows[0].count
+
+  // Two-column grid for vibes
+  const grid = document.createElement('div')
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px 40px;margin-top:4px'
+
+  rows.forEach((row, i) => {
+    const fillPct = max > 0 ? (row.count / max) * 100 : 0
+    const sharePct = total > 0 ? ((row.count / total) * 100).toFixed(1) : '0'
+    const color = SEQUENTIAL[i % SEQUENTIAL.length]
+
+    const div = document.createElement('div')
+    div.className = 'bar-row'
+    div.innerHTML = `
+      <div class="bar-meta">
+        <span class="bar-label" style="max-width:160px" title="${row.label}">${row.label}</span>
+        <span class="bar-count">${fmt(row.count)}<span class="bar-pct">${sharePct}%</span></span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${fillPct}%;background:${color}"></div>
+      </div>
+    `
+    grid.appendChild(div)
+  })
+  el.innerHTML = ''
+  el.appendChild(grid)
+}
+
+// ── Coverage renderer ─────────────────────────────────────────────────────────
+
+function renderCoverage(elId, fields) {
+  const el = document.getElementById(elId)
+  el.innerHTML = ''
+
+  fields.forEach(f => {
+    const p = f.total > 0 ? Math.round((f.classified / f.total) * 100) : 0
+    const cls = p >= 80 ? 'coverage-good' : p >= 50 ? 'coverage-mid' : 'coverage-bad'
+    const fillColor = p >= 80 ? 'var(--green)' : p >= 50 ? 'var(--amber)' : 'var(--red)'
+
+    const div = document.createElement('div')
+    div.className = 'coverage-row'
+    div.innerHTML = `
+      <span class="coverage-name">${f.name.toUpperCase()}</span>
+      <div class="coverage-bar-wrap">
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${p}%;background:${fillColor}"></div>
+        </div>
+      </div>
+      <span class="coverage-pct-label ${cls}">${p}%</span>
+    `
+    el.appendChild(div)
+  })
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function fmt(n) {
+  if (n === null || n === undefined) return '—'
+  return parseInt(n).toLocaleString()
+}
+
+function pct(part, total) {
+  if (!total) return '0'
+  return Math.round((part / total) * 100)
+}
+</script>
+</body>
+</html>

@@ -288,7 +288,9 @@
 <nav>
   <a href="/" style="text-decoration:none"><span class="logo">DRIP</span></a>
   <div class="nav-right">
-
+    <a id="analytics-link" href="/analytics.html"
+       style="display:none;font-size:11px;color:var(--gray);text-decoration:none;letter-spacing:1px;font-family:var(--mono)"
+       onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='var(--gray)'">DATA INSIGHTS ↗</a>
     <span class="signout" id="signout-btn" onclick="signOut()">Sign out</span>
   </div>
 </nav>
@@ -510,6 +512,7 @@ function signOut() {
   document.getElementById('login').style.display = 'block'
   document.getElementById('dashboard').style.display = 'none'
   document.getElementById('signout-btn').style.display = 'none'
+  document.getElementById('analytics-link').style.display = 'none'
   document.getElementById('dash-submit').style.display = 'none'
   document.getElementById('token-input').value = ''
 }
@@ -571,6 +574,7 @@ async function loadDashboard() {
     document.getElementById('login').style.display = 'none'
     document.getElementById('dashboard').style.display = 'block'
     document.getElementById('signout-btn').style.display = 'inline'
+    document.getElementById('analytics-link').style.display = 'inline'
     document.getElementById('dash-submit').style.display = 'block'
 
     const shopifyCount = brands.filter(b => b.is_shopify).length
