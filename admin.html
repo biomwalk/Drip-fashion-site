@@ -166,6 +166,26 @@
   </div>
 
   <div style="margin-top:60px">
+    <p class="section-title">LOW CONFIDENCE SUBMISSIONS</p>
+    <p style="color:var(--gray);font-size:13px;margin-bottom:24px">Brands that scored 10–69% confidence. Could be taxonomy bugs, mixed-category stores, or genuine non-fashion. Sorted highest score first.</p>
+    <div id="lowconf-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>BRAND</th>
+            <th>CONFIDENCE</th>
+            <th>PLATFORM</th>
+            <th>LANGUAGE</th>
+            <th>SUBMITTED</th>
+          </tr>
+        </thead>
+        <tbody id="lowconf-rows"></tbody>
+      </table>
+      <div id="lowconf-empty" class="empty" style="display:none">No low confidence submissions 🎉</div>
+    </div>
+  </div>
+
+  <div style="margin-top:60px">
     <p class="section-title">SUBMITTED / UNKNOWN PLATFORM</p>
     <p style="color:var(--gray);font-size:13px;margin-bottom:24px">Brands users submitted that we can't yet scrape. Sorted by demand. Use this to prioritise platform engineering effort.</p>
     <div id="unknown-wrap">
@@ -204,6 +224,7 @@ function doLogin() {
   loadSkippedSummary()
   loadLanguageQueue()
   loadUnknownSubmissions()
+  loadLowConfidenceSubmissions()
 }
 
 async function loadLanguageQueue() {
@@ -435,6 +456,40 @@ async function loadSkippedSummary() {
     }
   } catch (err) {
     console.warn('Failed to load skipped summary', err)
+  }
+}
+
+async function loadLowConfidenceSubmissions() {
+  try {
+    const res = await fetch(`${API}/brands/admin/low-confidence?token=${adminToken}`)
+    if (!res.ok) return
+    const data = await res.json()
+    const tbody = document.getElementById('lowconf-rows')
+    tbody.innerHTML = ''
+    if (!data.length) {
+      document.getElementById('lowconf-wrap').querySelector('table').style.display = 'none'
+      document.getElementById('lowconf-empty').style.display = 'block'
+      return
+    }
+    for (const s of data) {
+      const date = new Date(s.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const score = Math.round(s.fashion_confidence_score)
+      const scoreColor = score >= 60 ? '#4CAF50' : score >= 40 ? '#ffaa00' : '#ff4444'
+      const tr = document.createElement('tr')
+      tr.innerHTML = `
+        <td>
+          <div style="font-weight:500">${s.name}</div>
+          <div class="domain"><a href="https://${s.domain}" target="_blank" style="color:var(--gray)">${s.domain}</a></div>
+        </td>
+        <td><span style="color:${scoreColor};font-weight:700">${score}%</span></td>
+        <td style="color:var(--gray);font-size:13px">${s.platform_detected || '—'}</td>
+        <td><span class="lang-tag">${s.language_detected || '—'}</span></td>
+        <td style="color:var(--gray);font-size:13px">${date}</td>
+      `
+      tbody.appendChild(tr)
+    }
+  } catch (err) {
+    console.warn('Failed to load low confidence submissions', err)
   }
 }
 
