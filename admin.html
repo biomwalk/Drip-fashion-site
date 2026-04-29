@@ -288,13 +288,6 @@
 <nav>
   <a href="/" style="text-decoration:none"><span class="logo">DRIP</span></a>
   <div class="nav-right">
-    <div class="nav-submit" id="nav-submit" style="display:none">
-      <div class="nav-submit-wrap">
-        <input class="nav-submit-input" id="nav-url-input" type="text" placeholder="Enter a brand URL..." autocomplete="off" />
-        <button class="nav-submit-btn" id="nav-submit-btn" onclick="adminSubmit()">ADD</button>
-      </div>
-      <div class="nav-submit-result" id="nav-submit-result"></div>
-    </div>
     <span class="badge">ADMIN</span>
     <span class="signout" id="signout-btn" onclick="signOut()">Sign out</span>
   </div>
@@ -329,6 +322,18 @@
       <div class="stat-num" id="stat-avg-score">—</div>
       <div class="stat-label">AVG CONFIDENCE</div>
     </div>
+  </div>
+
+  <div id="dash-submit" style="display:none;margin-bottom:24px">
+    <div style="display:flex;gap:0;align-items:center">
+      <input class="nav-submit-input" id="nav-url-input" type="text"
+        placeholder="Enter a brand URL to add..."
+        autocomplete="off"
+        style="flex:1;padding:12px 16px;font-size:14px" />
+      <button class="nav-submit-btn" id="nav-submit-btn" onclick="adminSubmit()"
+        style="padding:12px 24px;font-size:12px">ADD BRAND</button>
+    </div>
+    <div class="nav-submit-result" id="nav-submit-result" style="margin-top:6px;font-size:12px"></div>
   </div>
 
   <div class="tab-bar">
@@ -493,7 +498,7 @@ function signOut() {
   document.getElementById('login').style.display = 'block'
   document.getElementById('dashboard').style.display = 'none'
   document.getElementById('signout-btn').style.display = 'none'
-  document.getElementById('nav-submit').style.display = 'none'
+  document.getElementById('dash-submit').style.display = 'none'
   document.getElementById('token-input').value = ''
 }
 
@@ -554,7 +559,7 @@ async function loadDashboard() {
     document.getElementById('login').style.display = 'none'
     document.getElementById('dashboard').style.display = 'block'
     document.getElementById('signout-btn').style.display = 'inline'
-    document.getElementById('nav-submit').style.display = 'flex'
+    document.getElementById('dash-submit').style.display = 'block'
 
     const shopifyCount = brands.filter(b => b.is_shopify).length
     const avgScore = brands.length
