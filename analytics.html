@@ -136,7 +136,7 @@
   <div class="stats">
     <div class="stat"><div class="stat-num" id="s-products">—</div><div class="stat-label">TOTAL PRODUCTS</div></div>
     <div class="stat"><div class="stat-num" id="s-brands">—</div><div class="stat-label">LIVE BRANDS</div></div>
-    <div class="stat"><div class="stat-num" id="s-price">—</div><div class="stat-label">AVG PRICE (GBP)</div></div>
+    <div class="stat"><div class="stat-num" id="s-price">—</div><div class="stat-label">AVG PRICE (USD)</div></div>
     <div class="stat"><div class="stat-num" id="s-cats">—</div><div class="stat-label">CATEGORIES</div></div>
   </div>
 
@@ -165,7 +165,7 @@
   <div class="chart-row one-col">
     <div class="chart-card">
       <div class="chart-label">PRICE DISTRIBUTION</div>
-      <div class="chart-desc">Product count by price bucket (GBP) — filter by category</div>
+      <div class="chart-desc">Product count by price bucket (USD) — filter by category</div>
       <div class="cat-tabs" id="cat-tabs"></div>
       <canvas id="chart-prices" height="220"></canvas>
     </div>
@@ -260,7 +260,7 @@ function renderAll() {
   if (!d) return
   document.getElementById('s-products').textContent = d.stats.total_products.toLocaleString()
   document.getElementById('s-brands').textContent = d.stats.total_brands.toLocaleString()
-  document.getElementById('s-price').textContent = '£' + d.stats.avg_price.toFixed(0)
+  document.getElementById('s-price').textContent = '$' + d.stats.avg_price.toFixed(0)
   document.getElementById('s-cats').textContent = d.stats.total_categories
   document.getElementById('last-updated').textContent =
     'Last updated ' + new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })
@@ -501,7 +501,7 @@ function drawPriceHistogram(pricesData, category) {
     ctx.font = `400 10px 'DM Mono', monospace`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
-    ctx.fillText('£' + BUCKETS[i], x + barW / 2, padTop + chartH + 8)
+    ctx.fillText('$' + BUCKETS[i], x + barW / 2, padTop + chartH + 8)
   })
 }
 
