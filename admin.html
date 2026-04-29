@@ -288,7 +288,7 @@
 <nav>
   <a href="/" style="text-decoration:none"><span class="logo">DRIP</span></a>
   <div class="nav-right">
-    <span class="badge">ADMIN</span>
+
     <span class="signout" id="signout-btn" onclick="signOut()">Sign out</span>
   </div>
 </nav>
@@ -304,6 +304,18 @@
 </div>
 
 <div id="dashboard">
+  <div id="dash-submit" style="display:none;margin-bottom:24px">
+    <div style="display:flex;gap:0">
+      <input class="nav-submit-input" id="nav-url-input" type="text"
+        placeholder="Enter a brand URL to add..."
+        autocomplete="off"
+        style="flex:1;padding:12px 16px;font-size:14px" />
+      <button class="nav-submit-btn" id="nav-submit-btn" onclick="adminSubmit()"
+        style="padding:12px 24px;font-size:12px">ADD BRAND</button>
+    </div>
+    <div class="nav-submit-result" id="nav-submit-result" style="margin-top:6px;font-size:12px"></div>
+  </div>
+
   <div class="dash-header">
     <h1>BRAND REVIEW</h1>
     <p class="sub" id="queue-sub">Loading...</p>
