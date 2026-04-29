@@ -258,7 +258,7 @@ async function loadDashboard() {
 
     const shopifyCount = brands.filter(b => b.is_shopify).length
     const avgScore = brands.length
-      ? Math.round(brands.reduce((s, b) => s + (b.fashion_confidence_score ?? 0), 0) / brands.length)
+      ? Math.round(brands.reduce((s, b) => s + (parseFloat(b.fashion_confidence_score) || 0), 0) / brands.length)
       : 0
 
     document.getElementById('stat-pending').textContent = brands.length
