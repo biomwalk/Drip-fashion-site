@@ -130,7 +130,11 @@
       <h1>DATA INSIGHTS</h1>
       <p class="sub" id="last-updated">Loading...</p>
     </div>
-    <button class="refresh-btn" onclick="loadInsights()">↻ REFRESH</button>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="refresh-btn" onclick="loadInsights()">↻ REFRESH</button>
+      <button class="refresh-btn" id="rescrape-btn" onclick="triggerRescrape()"
+        style="border-color:rgba(255,45,120,0.3);color:var(--pink)">⟳ RESCRAPE ALL</button>
+    </div>
   </div>
 
   <div class="stats">
@@ -503,6 +507,40 @@ function drawPriceHistogram(pricesData, category) {
     ctx.textBaseline = 'top'
     ctx.fillText('$' + BUCKETS[i], x + barW / 2, padTop + chartH + 8)
   })
+}
+
+// ── Rescrape ─────────────────────────────────────────────────────────────────
+
+async function triggerRescrape() {
+  const confirmed = confirm(
+    'This will queue a rescrape for every brand in the database.\n\n' +
+    'This is a costly operation — only run it when necessary.\n\n' +
+    'Continue?'
+  )
+  if (!confirmed) return
+
+  const btn = document.getElementById('rescrape-btn')
+  btn.textContent = '...'
+  btn.disabled = true
+
+  try {
+    const res = await fetch(`${API}/brands/admin/rescrape-all?token=${adminToken}`, {
+      method: 'POST'
+    })
+    const data = await res.json()
+    if (res.ok) {
+      alert(`✓ Queued ${data.queued} brands for rescrape (${data.total - data.queued} already in queue).`)
+    } else {
+      alert('Failed to trigger rescrape — check console.')
+      console.error(data)
+    }
+  } catch (err) {
+    alert('Network error — check console.')
+    console.error(err)
+  } finally {
+    btn.textContent = '⟳ RESCRAPE ALL'
+    btn.disabled = false
+  }
 }
 
 // ── Resize ────────────────────────────────────────────────────────────────────

@@ -360,6 +360,9 @@
     <button class="tab-btn" onclick="switchTab('taxonomy')" id="tab-taxonomy">
       TAXONOMY HEALTH
     </button>
+    <button class="tab-btn" onclick="switchTab('brands'); loadAllBrands()" id="tab-brands">
+      ALL BRANDS
+    </button>
   </div>
 
   <!-- ── TAB 1: REVIEW QUEUE ── -->
@@ -480,6 +483,50 @@
     </div>
     <div class="tax-stats" id="skip-stats"></div>
     <div id="skip-tables"></div>
+  </div>
+  <!-- ── TAB 4: ALL BRANDS ── -->
+  <div class="tab-panel" id="panel-brands">
+    <div class="section-header">
+      <div>
+        <div class="section-label">ALL BRANDS</div>
+        <div class="section-desc">Every live brand in the database</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div class="search-wrap" style="flex:1;margin-bottom:0">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" id="brands-search" placeholder="Filter by name or domain..."
+          oninput="filterAllBrands()" />
+      </div>
+      <select id="brands-sort" onchange="filterAllBrands()"
+        style="background:var(--surface2);border:1px solid var(--border2);color:var(--white);
+               font-family:var(--mono);font-size:11px;padding:0 12px;letter-spacing:1px;outline:none">
+        <option value="name">NAME ↑</option>
+        <option value="products">PRODUCTS ↓</option>
+        <option value="scraped">LAST SCRAPED ↓</option>
+        <option value="created">ADDED ↓</option>
+      </select>
+    </div>
+
+    <div class="scroll-table" style="height:600px">
+      <table>
+        <thead>
+          <tr>
+            <th>BRAND</th>
+            <th>PLATFORM</th>
+            <th>PRODUCTS</th>
+            <th>GENDER LEAN</th>
+            <th>VIBES</th>
+            <th>LAST SCRAPED</th>
+            <th>ADDED</th>
+          </tr>
+        </thead>
+        <tbody id="all-brands-rows"></tbody>
+      </table>
+      <div id="all-brands-empty" class="empty" style="display:none">No brands found</div>
+      <div id="all-brands-loading" class="empty">Loading...</div>
+    </div>
   </div>
 </div>
 
@@ -785,6 +832,71 @@ async function blockBrand(brandId, brandName, source) {
         `<td colspan="${cols}" style="color:var(--red);padding:14px;font-family:var(--mono);font-size:12px">✗ ${brandName} blocked</td>`
     } else { btn.disabled = false; btn.textContent = 'BLOCK' }
   } catch { btn.disabled = false; btn.textContent = 'BLOCK' }
+}
+
+// ── All Brands ───────────────────────────────────────────────────────────────
+
+let allBrandsData = []
+let allBrandsLoaded = false
+
+async function loadAllBrands() {
+  if (allBrandsLoaded) return
+  try {
+    const res = await fetch(`${API}/brands/admin/all-brands?token=${adminToken}`)
+    if (!res.ok) return
+    allBrandsData = await res.json()
+    allBrandsLoaded = true
+    document.getElementById('all-brands-loading').style.display = 'none'
+    filterAllBrands()
+  } catch (err) { console.warn('Failed to load all brands', err) }
+}
+
+function filterAllBrands() {
+  const q = document.getElementById('brands-search').value.toLowerCase().trim()
+  const sort = document.getElementById('brands-sort').value
+  let data = q
+    ? allBrandsData.filter(b => b.name.toLowerCase().includes(q) || b.domain.toLowerCase().includes(q))
+    : [...allBrandsData]
+
+  if (sort === 'products') data.sort((a, b) => b.product_count - a.product_count)
+  else if (sort === 'scraped') data.sort((a, b) => new Date(b.last_scraped_at || 0) - new Date(a.last_scraped_at || 0))
+  else if (sort === 'created') data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  else data.sort((a, b) => a.name.localeCompare(b.name))
+
+  renderAllBrands(data)
+}
+
+function renderAllBrands(data) {
+  const tbody = document.getElementById('all-brands-rows')
+  const empty = document.getElementById('all-brands-empty')
+  tbody.innerHTML = ''
+  if (!data.length) { empty.style.display = 'block'; return }
+  empty.style.display = 'none'
+
+  for (const b of data) {
+    const scraped = b.last_scraped_at
+      ? new Date(b.last_scraped_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
+      : '—'
+    const added = new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
+    const vibes = (b.style_tags || []).slice(0, 2).map(v => v.replace(/_/g, ' ')).join(', ') || '—'
+    const platformLabel = b.platform === 'woocommerce' ? 'WC' : 'Shopify'
+    const genderColor = b.gender_lean === 'men' ? 'var(--blue,#3498DB)' : b.gender_lean === 'women' ? 'var(--pink)' : 'var(--gray)'
+
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td>
+        <div style="font-weight:600;font-size:13px">${b.name}</div>
+        <div class="domain-link"><a href="https://${b.domain}" target="_blank">${b.domain}</a></div>
+      </td>
+      <td><span class="lang-tag">${platformLabel}</span></td>
+      <td><span class="count-badge">${b.product_count.toLocaleString()}</span></td>
+      <td><span style="font-size:11px;font-family:var(--mono);color:${genderColor}">${b.gender_lean}</span></td>
+      <td style="font-size:11px;color:var(--gray);font-family:var(--mono)">${vibes}</td>
+      <td style="font-size:11px;color:var(--gray);font-family:var(--mono)">${scraped}</td>
+      <td style="font-size:11px;color:var(--gray);font-family:var(--mono)">${added}</td>
+    `
+    tbody.appendChild(tr)
+  }
 }
 
 // ── Unknown Submissions ───────────────────────────────────────────────────────
